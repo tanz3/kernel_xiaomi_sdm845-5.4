@@ -642,6 +642,8 @@ static inline bool gic_enable_sre(void)
 void gic_s2idle_wake(void);
 #endif /* CONFIG_QGKI_SHOW_S2IDLE_WAKE_IRQ */
 
+void gic_v3_dist_save(void);
+void gic_v3_dist_restore(void);
 #endif
 
 #endif
