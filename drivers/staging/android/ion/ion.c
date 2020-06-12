@@ -26,6 +26,11 @@
 #include <linux/uaccess.h>
 
 #include "ion_private.h"
+#include "compat_ion.h"
+
+#ifdef CONFIG_ION_LEGACY
+#include "ion_legacy.h"
+#endif
 
 #define ION_CURRENT_ABI_VERSION  2
 
@@ -143,6 +148,11 @@ union ion_ioctl_arg {
 	struct ion_allocation_data allocation;
 	struct ion_heap_query query;
 	u32 ion_abi_version;
+#ifdef CONFIG_ION_LEGACY
+	struct ion_fd_data fd;
+	struct ion_old_allocation_data old_allocation;
+	struct ion_handle_data handle;
+#endif
 };
 
 static int validate_ioctl_arg(unsigned int cmd, union ion_ioctl_arg *arg)
@@ -207,6 +217,41 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case ION_IOC_ABI_VERSION:
 		data.ion_abi_version = ION_CURRENT_ABI_VERSION;
 		break;
+#ifdef CONFIG_ION_LEGACY
+	case ION_OLD_IOC_ALLOC:
+	{
+		int fd;
+
+		fd = ion_alloc_fd(data.old_allocation.len,
+				  data.old_allocation.heap_id_mask,
+				  data.old_allocation.flags);
+		if (fd < 0)
+			return fd;
+
+		data.old_allocation.handle = fd;
+
+		break;
+	}
+	case ION_IOC_FREE:
+		/*
+		 * libion passes 0 as the handle to check for this ioctl's
+		 * existence and expects -ENOTTY on kernel 4.12+ as an indicator
+		 * of having a new ION ABI. We want to use new ION as much as
+		 * possible, so pretend that this ioctl doesn't exist when
+		 * libion checks for it.
+		 */
+		if (!data.handle.handle)
+			ret = -ENOTTY;
+
+		break;
+	case ION_IOC_SHARE:
+	case ION_IOC_MAP:
+		data.fd.fd = data.fd.handle;
+		break;
+	case ION_IOC_IMPORT:
+		data.fd.handle = data.fd.fd;
+		break;
+#endif
 	default:
 		return -ENOTTY;
 	}
@@ -222,7 +267,11 @@ static const struct file_operations ion_fops = {
 	.owner          = THIS_MODULE,
 	.unlocked_ioctl = ion_ioctl,
 #ifdef CONFIG_COMPAT
+#ifdef CONFIG_ION_LEGACY
+	.compat_ioctl	= compat_ion_ioctl,
+#else
 	.compat_ioctl	= ion_ioctl,
+#endif
 #endif
 };
 
