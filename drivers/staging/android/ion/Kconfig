@@ -12,3 +12,9 @@ menuconfig ION
 	  say N here.
 
 source "drivers/staging/android/ion/heaps/Kconfig"
+
+config ION_LEGACY
+	bool "Legacy ion"
+	depends on ION
+	help
+	  Choose this option to enable the legacy ion. If in doubt, say N.
