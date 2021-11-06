@@ -764,6 +764,7 @@ static const struct soc_id soc_id[] = {
 	{ 310, "MSM8996AU" },
 	{ 311, "APQ8096AU" },
 	{ 312, "APQ8096SG" },
+	{ 321, "SDM845" },
 	{ 356, "KONA" },
 	{ 362, "SA8155" },
 	{ 367, "SA8155P" },
@@ -1041,7 +1042,6 @@ static struct device_attribute select_image =
 
 static struct device_attribute images =
 	__ATTR(images, 0444, msm_get_images, NULL);
-
 
 static umode_t soc_info_attribute(struct kobject *kobj,
 						   struct attribute *attr,
