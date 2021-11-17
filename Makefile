@@ -58,6 +58,14 @@ ifeq ($(CONFIG_ARCH_MONACO), y)
 LINUXINCLUDE    += -include $(srctree)/techpack/display/config/monacodispconf.h
 endif
 
+ifeq ($(CONFIG_ARCH_SM6150), y)
+include $(srctree)/techpack/display/config/sm6150disp.conf
+endif
+
+ifeq ($(CONFIG_ARCH_SM6150), y)
+LINUXINCLUDE    += -include $(srctree)/techpack/display/config/sm6150dispconf.h
+endif
+
 obj-$(CONFIG_DRM_MSM) += msm/
 
 ifeq ($(CONFIG_ARCH_SDXLEMUR), y)
