@@ -21,6 +21,9 @@ endif
 ifeq ($(TARGET_SUPPORT), qcs6490)
 KBUILD_OPTIONS += CONFIG_ARCH_LAHAINA=y
 endif
+ifeq ($(TARGET_SUPPORT),sdm845)
+KBUILD_OPTIONS += CONFIG_ARCH_SDM845=y
+endif
 
 subdir-ccflags-y += -I$(AUDIO_ROOT)/include/uapi/
 
@@ -30,7 +33,7 @@ obj-m += dsp/codecs/
 obj-m += soc/
 obj-m += asoc/
 obj-m += asoc/codecs/
-ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sdmsteppe))
+ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sdmsteppe, sdm845))
 obj-m += asoc/codecs/wcd934x/
 KBUILD_CFLAGS += -Wno-error
 endif

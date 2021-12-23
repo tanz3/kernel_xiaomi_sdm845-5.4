@@ -108,6 +108,11 @@ else
 			export
 			INCS    +=  -include $(AUDIO_ROOT)/config/gvmautoconf.h
 		endif
+		ifeq ($(CONFIG_ARCH_SDM845), y)
+			include $(AUDIO_ROOT)/config/sdm845auto.conf
+			export
+			INCS    +=  -include $(AUDIO_ROOT)/config/sdm845autoconf.h
+		endif
 	endif
 endif
 
