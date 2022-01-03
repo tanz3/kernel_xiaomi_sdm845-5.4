@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2022, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -10,6 +10,8 @@
 #include <linux/of.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 #include "../../../drivers/clk/qcom/common.h"
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
@@ -46,6 +48,7 @@ struct pinctrl_info {
 struct audio_ext_clk {
 	struct pinctrl_info pnctrl_info;
 	struct clk_fixed_factor fact;
+	int gpio;
 };
 
 struct audio_ext_clk_priv {
@@ -139,7 +142,6 @@ static u8 audio_ext_clk_get_parent(struct clk_hw *hw)
 	int num_parents = clk_hw_get_num_parents(hw);
 	const char * const *parent_names = hw->init->parent_names;
 	u8 i = 0, ret = hw->init->num_parents + 1;
-
 	if ((clk_priv->clk_src == AUDIO_EXT_CLK_PMI) && clk_priv->clk_name) {
 		for (i = 0; i < num_parents; i++) {
 			if (!strcmp(parent_names[i], clk_priv->clk_name))
@@ -258,9 +260,10 @@ static struct audio_ext_clk audio_clk_array[] = {
 			.div = 1,
 			.hw.init = &(struct clk_init_data){
 				.name = "audio_ext_pmi_clk",
-				.parent_names = audio_ext_pmi_div_clk,
+				.parent_names = (const char *[])
+								{"pm6150_div_clk1"},
 				.num_parents =
-					 ARRAY_SIZE(audio_ext_pmi_div_clk),
+					1,
 				.ops = &audio_ext_clk_ops,
 			},
 		},
@@ -519,6 +522,7 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 	int ret;
 	struct audio_ext_clk_priv *clk_priv;
 	u32 clk_freq = 0, clk_id = 0, clk_src = 0, use_pinctrl = 0;
+	int clk_gpio;
 
 	clk_priv = devm_kzalloc(&pdev->dev, sizeof(*clk_priv), GFP_KERNEL);
 	if (!clk_priv)
@@ -590,11 +594,30 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 		}
 	}
 
+	clk_gpio = of_get_named_gpio(pdev->dev.of_node,
+				"qcom,audio-ref-clk-gpio", 0);
+	if (clk_gpio > 0) {
+		ret = gpio_request(clk_gpio, "EXT_CLK");
+		if (ret) {
+			dev_err(&pdev->dev,
+				"Request ext clk gpio failed %d, err:%d\n",
+				clk_gpio, ret);
+			return ret;
+		}
+		if (of_property_read_bool(pdev->dev.of_node,
+				"qcom,node_has_rpm_clock")) {
+			clk_priv->audio_clk.gpio = clk_gpio;
+		}
+	}
+
 	ret = audio_get_clk_data(pdev);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: clk_init is failed\n",
 			__func__);
-		audio_put_pinctrl(pdev);
+		if (use_pinctrl)
+			audio_put_pinctrl(pdev);
+		if (clk_priv->audio_clk.gpio > 0)
+			gpio_free(clk_priv->audio_clk.gpio);
 		return ret;
 	}
 	return 0;
@@ -602,7 +625,11 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 
 static int audio_ref_clk_remove(struct platform_device *pdev)
 {
+	struct audio_ext_clk_priv *clk_priv = platform_get_drvdata(pdev);
+
 	audio_put_pinctrl(pdev);
+	if (clk_priv->audio_clk.gpio > 0)
+		gpio_free(clk_priv->audio_clk.gpio);
 
 	return 0;
 }
