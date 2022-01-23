@@ -505,6 +505,7 @@ struct wcd_swr_ctrl_platform_data {
 	int (*handle_irq)(void *handle,
 			  irqreturn_t (*swrm_irq_handler)(int irq, void *data),
 			  void *swrm_handle, int action);
+	int (*core_vote)(void *handle, bool enable);
 };
 
 /* Holds all Soundwire and speaker related information */
@@ -11375,6 +11376,7 @@ static int tavil_probe(struct platform_device *pdev)
 	tavil->swr.plat_data.bulk_write = tavil_swrm_bulk_write;
 	tavil->swr.plat_data.clk = tavil_swrm_clock;
 	tavil->swr.plat_data.handle_irq = tavil_swrm_handle_irq;
+	tavil->swr.plat_data.core_vote = NULL;
 	tavil->swr.spkr_gain_offset = WCD934X_RX_GAIN_OFFSET_0_DB;
 
 	/* Register for Clock */
