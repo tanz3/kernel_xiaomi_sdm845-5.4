@@ -7985,8 +7985,8 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	struct snd_soc_card *card = NULL;
 	struct snd_soc_dai_link *dailink;
 	int total_links = 0, rc = 0;
-	u32 tavil_codec = 0, auxpcm_audio_intf = 0;
-	u32 mi2s_audio_intf = 0, ext_disp_audio_intf = 0;
+	u32 tavil_codec = 0, val = 0;
+	u32 mi2s_audio_intf = 0;
 	u32 wcn_btfm_intf = 0;
 	const struct of_device_id *match;
 	u32 tasha_codec = 0;
@@ -8086,12 +8086,12 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 
 		rc = of_property_read_u32(dev->of_node,
 					  "qcom,ext-disp-audio-rx",
-					  &ext_disp_audio_intf);
+					  &val);
 		if (rc) {
 			dev_dbg(dev, "%s: No DT match Ext Disp interface\n",
 				__func__);
 		} else {
-			if (ext_disp_audio_intf) {
+			if (val) {
 				memcpy(msm_sm6150_dai_links + total_links,
 					ext_disp_be_dai_link,
 					sizeof(ext_disp_be_dai_link));
@@ -8133,12 +8133,12 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 
 		rc = of_property_read_u32(dev->of_node,
 					  "qcom,auxpcm-audio-intf",
-					  &auxpcm_audio_intf);
+					  &val);
 		if (rc) {
 			dev_dbg(dev, "%s: No DT match Aux PCM interface\n",
 				__func__);
 		} else {
-			if (auxpcm_audio_intf) {
+			if (val) {
 				memcpy(msm_sm6150_dai_links + total_links,
 					msm_auxpcm_be_dai_links,
 					sizeof(msm_auxpcm_be_dai_links));
