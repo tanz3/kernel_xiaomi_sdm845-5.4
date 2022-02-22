@@ -59,11 +59,13 @@ LINUXINCLUDE    += -include $(srctree)/techpack/display/config/monacodispconf.h
 endif
 
 ifeq ($(CONFIG_ARCH_SM6150), y)
-include $(srctree)/techpack/display/config/sm6150disp.conf
-endif
-
-ifeq ($(CONFIG_ARCH_SM6150), y)
+     ifeq ($(CONFIG_QGKI), y)
+		include $(srctree)/techpack/display/config/sm6150disp.conf
 LINUXINCLUDE    += -include $(srctree)/techpack/display/config/sm6150dispconf.h
+     else
+		include $(srctree)/techpack/display/config/gki_sm6150disp.conf
+LINUXINCLUDE    += -include $(srctree)/techpack/display/config/gki_sm6150dispconf.h
+     endif
 endif
 
 obj-$(CONFIG_DRM_MSM) += msm/
