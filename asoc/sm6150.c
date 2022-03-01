@@ -212,7 +212,7 @@ struct msm_asoc_mach_data {
 	struct device_node *hph_en0_gpio_p; /* used by pinctrl API */
 	bool is_afe_config_done;
 	struct device_node *fsa_handle;
-    u32 wsa_max_devs;
+	u32 wsa_max_devs;
 };
 
 struct msm_asoc_wcd93xx_codec {
@@ -5833,7 +5833,7 @@ static struct snd_soc_ops sm6150_tdm_be_ops = {
 
 static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)
 {
-    pr_debug("%s: TODO: add new QOS implementation\n", __func__);
+	pr_debug("%s: TODO: add new QOS implementation\n", __func__);
 	return 0;
 }
 
@@ -7623,7 +7623,9 @@ static struct snd_soc_dai_link msm_sm6150_dai_links[
 			 ARRAY_SIZE(msm_tavil_be_dai_links) +
 			 ARRAY_SIZE(msm_tasha_be_dai_links) +
 			 ARRAY_SIZE(msm_wcn_be_dai_links) +
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 			 ARRAY_SIZE(ext_disp_be_dai_link) +
+#endif
 			 ARRAY_SIZE(msm_mi2s_be_dai_links) +
 			 ARRAY_SIZE(msm_auxpcm_be_dai_links) +
 			 ARRAY_SIZE(msm_wsa_cdc_dma_be_dai_links) +
@@ -7922,7 +7924,9 @@ static struct snd_soc_dai_link msm_stub_fe_dai_links[] = {
 		.name = "MSMSTUB Media1",
 		.stream_name = "MultiMedia1",
 		.dynamic = 1,
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 		.async_ops = ASYNC_DPCM_SND_SOC_PREPARE,
+#endif /* CONFIG_AUDIO_QGKI */
 		.dpcm_playback = 1,
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
@@ -8084,6 +8088,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 				ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links);
 		}
 
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 		rc = of_property_read_u32(dev->of_node,
 					  "qcom,ext-disp-audio-rx",
 					  &val);
@@ -8099,6 +8104,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					ARRAY_SIZE(ext_disp_be_dai_link);
 			}
 		}
+#endif
 
 		rc = of_property_read_u32(dev->of_node, "qcom,mi2s-audio-intf",
 					  &mi2s_audio_intf);
@@ -8183,7 +8189,7 @@ static int msm_wsa881x_init(struct snd_soc_pcm_runtime *rtd)
 	unsigned int ch_rate[WSA881X_MAX_SWR_PORTS] = {2400, 600, 300, 1200};
 	unsigned int ch_mask[WSA881X_MAX_SWR_PORTS] = {0x1, 0xF, 0x3, 0x3};
 	struct snd_soc_component *component = NULL;
-	struct msm_asoc_mach_data *pdata = 
+	struct msm_asoc_mach_data *pdata =
                 snd_soc_card_get_drvdata(rtd->card);
 	struct snd_soc_dapm_context *dapm = NULL;
 
@@ -8325,7 +8331,9 @@ static int sm6150_ssr_enable(struct device *dev, void *data)
 				pdata->is_afe_config_done = true;
 		}
 	}
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 	snd_soc_card_change_online_state(card, 1);
+#endif /* CONFIG_AUDIO_QGKI */
 	dev_dbg(dev, "%s: setting snd_card to ONLINE\n", __func__);
 
 err:
@@ -8344,7 +8352,9 @@ static void sm6150_ssr_disable(struct device *dev, void *data)
 	}
 
 	dev_dbg(dev, "%s: setting snd_card to OFFLINE\n", __func__);
+#if IS_ENABLED(CONFIG_AUDIO_QGKI)
 	snd_soc_card_change_online_state(card, 0);
+#endif /* CONFIG_AUDIO_QGKI */
 
 	if (strnstr(card->name, "tavil", strlen(card->name)) ||
 	    strnstr(card->name, "tasha", strlen(card->name))) {
