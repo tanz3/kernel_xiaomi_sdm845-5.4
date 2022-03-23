@@ -502,6 +502,7 @@ struct wcd_swr_ctrl_platform_data {
 	int (*write)(void *handle, int reg, int val);
 	int (*bulk_write)(void *handle, u32 *reg, u32 *val, size_t len);
 	int (*clk)(void *handle, bool enable);
+	int (*core_vote)(void *handle, bool enable);
 	int (*handle_irq)(void *handle,
 			  irqreturn_t (*swrm_irq_handler)(int irq, void *data),
 			  void *swrm_handle, int action);
@@ -762,7 +763,7 @@ int tavil_set_port_map(struct snd_soc_component *component,
 	if (!component || (size == 0) || !data)
 		return -EINVAL;
 
-    priv = snd_soc_component_get_drvdata(component);
+	priv = snd_soc_component_get_drvdata(component);
 
 	map = (struct swr_mstr_port_map *)data;
 

@@ -4906,7 +4906,7 @@ static int msm_audrx_tavil_init(struct snd_soc_pcm_runtime *rtd)
 	tavil_codec_info_create_codec_entry(pdata->codec_root, component);
 
 	tavil_set_port_map(component,
-				ARRAY_SIZE(sm_port_map_tavil), sm_port_map_tavil_wsa);
+				ARRAY_SIZE(sm_port_map_tavil_wsa), sm_port_map_tavil_wsa);
 
 	codec_reg_done = true;
 	return 0;
@@ -5878,6 +5878,9 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	 */
 	mutex_lock(&mi2s_intf_conf[index].lock);
 	if (++mi2s_intf_conf[index].ref_cnt == 1) {
+		/* Check if msm needs to provide the clock to the interface */
+		if (!mi2s_intf_conf[index].msm_is_mi2s_master)
+			mi2s_clk[index].clk_id = mi2s_ebit_clk[index];
 		ret = msm_mi2s_set_sclk(substream, true);
 		if (ret < 0) {
 			dev_err(rtd->card->dev,
@@ -5902,11 +5905,8 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 			msm_cdc_pinctrl_select_active_state(
 					pdata->mi2s_gpio_p[index]);
 	}
-	/* Check if msm needs to provide the clock to the interface */
-	if (!mi2s_intf_conf[index].msm_is_mi2s_master) {
-		mi2s_clk[index].clk_id = mi2s_ebit_clk[index];
+	if (!mi2s_intf_conf[index].msm_is_mi2s_master)
 		fmt = SND_SOC_DAIFMT_CBM_CFM;
-	}
 	ret = snd_soc_dai_set_fmt(cpu_dai, fmt);
 	if (ret < 0) {
 		pr_err("%s: set fmt cpu dai failed for MI2S (%d), err:%d\n",

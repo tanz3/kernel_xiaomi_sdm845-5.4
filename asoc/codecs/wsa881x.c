@@ -1372,7 +1372,7 @@ static void wsa881x_remove(struct snd_soc_component *component)
 }
 
 static const struct snd_soc_component_driver soc_codec_dev_wsa881x = {
-	.name = "",
+	.name = "wsa-codec",
 	.probe = wsa881x_probe,
 	.remove = wsa881x_remove,
 	.controls = wsa881x_snd_controls,
@@ -1385,16 +1385,16 @@ static const struct snd_soc_component_driver soc_codec_dev_wsa881x = {
 
 static struct snd_soc_dai_driver wsa_dai[] = {
 	{
-		.name = "",
+		.name = "wsa_rx",
 		.playback = {
-			.stream_name = "",
+			.stream_name = "WSA881X_AIF Playback",
 			.rates = WSA881X_RATES | WSA881X_FRAC_RATES,
 			.formats = WSA881X_FORMATS,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
 			.channels_max = 2,
-			},
+		},
 	},
 };
 
@@ -1692,15 +1692,15 @@ static int wsa881x_swr_probe(struct swr_device *pdev)
 	return 0;
 
 err_mem:
-	 kfree(wsa881x->wsa881x_name_prefix);
+	kfree(wsa881x->wsa881x_name_prefix);
 	if (wsa881x->dai_driver) {
-		kfree(wsa881x->dai_driver->name);
-		kfree(wsa881x->dai_driver->playback.stream_name);
-		kfree(wsa881x->dai_driver);
+		devm_kfree(&pdev->dev, wsa881x->dai_driver->name);
+		devm_kfree(&pdev->dev, wsa881x->dai_driver->playback.stream_name);
+		devm_kfree(&pdev->dev, wsa881x->dai_driver);
 	}
 	if (wsa881x->driver) {
-		kfree(wsa881x->driver->name);
-		kfree(wsa881x->driver);
+		devm_kfree(&pdev->dev, wsa881x->driver->name);
+		devm_kfree(&pdev->dev, wsa881x->driver);
 	}
 dev_err:
 	if (pin_state_current == false)
@@ -1731,6 +1731,16 @@ static int wsa881x_swr_remove(struct swr_device *pdev)
 	if (wsa881x->pd_gpio)
 		gpio_free(wsa881x->pd_gpio);
 	swr_set_dev_data(pdev, NULL);
+	kfree(wsa881x->wsa881x_name_prefix);
+	if (wsa881x->dai_driver) {
+		devm_kfree(&pdev->dev, wsa881x->dai_driver->name);
+		devm_kfree(&pdev->dev, wsa881x->dai_driver->playback.stream_name);
+		devm_kfree(&pdev->dev, wsa881x->dai_driver);
+	}
+	if (wsa881x->driver) {
+		devm_kfree(&pdev->dev, wsa881x->driver->name);
+		devm_kfree(&pdev->dev, wsa881x->driver);
+	}
 	return 0;
 }
 
