@@ -506,7 +506,6 @@ struct wcd_swr_ctrl_platform_data {
 	int (*handle_irq)(void *handle,
 			  irqreturn_t (*swrm_irq_handler)(int irq, void *data),
 			  void *swrm_handle, int action);
-	int (*core_vote)(void *handle, bool enable);
 };
 
 /* Holds all Soundwire and speaker related information */
