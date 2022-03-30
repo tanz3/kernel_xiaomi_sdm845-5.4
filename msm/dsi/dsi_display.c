@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -5881,9 +5882,6 @@ static void dsi_display_firmware_display(const struct firmware *fw,
 		DSI_INFO("no firmware available, fallback to device node\n");
 	}
 
-	if (dsi_display_init(display))
-		return;
-
 	DSI_DEBUG("success\n");
 }
 
@@ -5981,11 +5979,9 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 				dsi_display_firmware_display);
 	}
 
-	if (!firm_req) {
-		rc = dsi_display_init(display);
-		if (rc)
-			goto end;
-	}
+	rc = dsi_display_init(display);
+	if (rc)
+		goto end;
 
 	return 0;
 end:
