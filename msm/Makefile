@@ -26,7 +26,8 @@ msm_drm-$(CONFIG_DRM_MSM_DP) += dp/dp_altmode.o \
 	sde_hdcp_1x.o \
 	sde_hdcp_2x.o \
 	dp/dp_pll.o \
-	dp/dp_pll_5nm.o
+	dp/dp_pll_5nm.o \
+	dp/dp_pll_14nm.o
 
 msm_drm-$(CONFIG_DRM_MSM_DP_MST) += dp/dp_mst_drm.o
 
@@ -110,8 +111,8 @@ msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
 	dsi/dsi_pll.o \
 	dsi/dsi_pll_5nm.o \
 	dsi/dsi_pll_10nm.o \
-        dsi/dsi_pll_14nm.o \
-        dsi/dsi_pll_14nm_util.o \
+	dsi/dsi_pll_14nm.o \
+	dsi/dsi_pll_14nm_util.o \
 	dsi/dsi_ctrl_hw_cmn.o \
 	dsi/dsi_ctrl_hw_1_4.o \
 	dsi/dsi_ctrl_hw_2_0.o \
