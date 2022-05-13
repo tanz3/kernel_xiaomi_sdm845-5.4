@@ -235,7 +235,7 @@ static int dp_parser_pinctrl(struct dp_parser *parser)
 		pinctrl->state_suspend = NULL;
 		DP_DEBUG("failed to get pinctrl suspend state\n");
 	}
-error:
+
 	return 0;
 }
 
