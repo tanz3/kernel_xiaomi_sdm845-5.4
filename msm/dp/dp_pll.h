@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __DP_PLL_H
@@ -35,16 +36,18 @@ enum dp_pll_revision {
 	DP_PLL_5NM_V1,
 	DP_PLL_5NM_V2,
 	DP_PLL_7NM,
+	DP_PLL_14NM,
 };
 
 static inline const char *dp_pll_get_revision(enum dp_pll_revision rev)
 {
 	switch (rev) {
-	case DP_PLL_UNKNOWN:	return "DP_PLL_UNKNOWN";
-	case DP_PLL_5NM_V1:	return "DP_PLL_5NM_V1";
-	case DP_PLL_5NM_V2:	return "DP_PLL_5NM_V2";
-	case DP_PLL_7NM:	return "DP_PLL_7NM";
-	default:		return "???";
+	case DP_PLL_UNKNOWN: return "DP_PLL_UNKNOWN";
+	case DP_PLL_5NM_V1:  return "DP_PLL_5NM_V1";
+	case DP_PLL_5NM_V2:  return "DP_PLL_5NM_V2";
+	case DP_PLL_7NM:     return "DP_PLL_7NM";
+	case DP_PLL_14NM:    return "DP_PLL_14NM";
+	default:             return "???";
 	}
 }
 
@@ -132,6 +135,8 @@ static inline bool is_gdsc_disabled(struct dp_pll *pll)
 
 int dp_pll_clock_register_5nm(struct dp_pll *pll);
 void dp_pll_clock_unregister_5nm(struct dp_pll *pll);
+int dp_pll_clock_register_14nm(struct dp_pll *pll);
+void dp_pll_clock_unregister_14nm(struct dp_pll *pll);
 
 struct dp_pll_in {
 	struct platform_device *pdev;

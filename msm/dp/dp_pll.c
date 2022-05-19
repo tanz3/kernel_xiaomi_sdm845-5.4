@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/err.h>
@@ -55,6 +56,9 @@ static int dp_pll_clock_register(struct dp_pll *pll)
 	case DP_PLL_7NM:
 		rc = dp_pll_clock_register_5nm(pll);
 		break;
+	case DP_PLL_14NM:
+		rc = dp_pll_clock_register_14nm(pll);
+		break;
 	default:
 		rc = -ENOTSUPP;
 		break;
@@ -70,6 +74,9 @@ static void dp_pll_clock_unregister(struct dp_pll *pll)
 	case DP_PLL_5NM_V2:
 	case DP_PLL_7NM:
 		dp_pll_clock_unregister_5nm(pll);
+		break;
+	case DP_PLL_14NM:
+		dp_pll_clock_unregister_14nm(pll);
 		break;
 	default:
 		break;
@@ -106,6 +113,8 @@ struct dp_pll *dp_pll_get(struct dp_pll_in *in)
 			pll->revision = DP_PLL_5NM_V2;
 		} else if (!strcmp(label, "7nm")) {
 			pll->revision = DP_PLL_7NM;
+		} else if (!strcmp(label, "14nm")) {
+			pll->revision = DP_PLL_14NM;
 		} else {
 			DP_ERR("Unsupported pll revision\n");
 			rc = -ENOTSUPP;
