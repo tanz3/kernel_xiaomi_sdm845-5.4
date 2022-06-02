@@ -337,7 +337,6 @@ int apr_load_adsp_image(void)
 			rc = PTR_ERR(q6.pil);
 			pr_err("APR: Unable to load q6 image, error:%d\n", rc);
 		} else {
-			apr_set_q6_state(APR_SUBSYS_LOADED);
 			pr_debug("APR: Image is loaded, stated\n");
 		}
 	} else if (apr_get_q6_state() == APR_SUBSYS_LOADED) {

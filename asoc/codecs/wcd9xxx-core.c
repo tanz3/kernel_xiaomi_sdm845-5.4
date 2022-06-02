@@ -23,6 +23,7 @@
 #include "wcd9xxx-utils.h"
 #include <asoc/wcd9xxx-regmap.h>
 #include <asoc/wcd9xxx-slimslave.h>
+#include <ipc/apr.h>
 
 #define WCD9XXX_REGISTER_START_OFFSET 0x800
 #define WCD9XXX_SLIM_RW_MAX_TRIES 3
@@ -1297,6 +1298,10 @@ static int wcd9xxx_slim_probe(struct slim_device *slim)
 
 	if (!slim)
 		return -EINVAL;
+
+	if (apr_get_q6_state() != APR_SUBSYS_LOADED) {
+		return -EPROBE_DEFER;
+	}
 
 	intf_type = wcd9xxx_get_intf_type();
 
