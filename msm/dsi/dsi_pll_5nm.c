@@ -291,6 +291,13 @@ static inline bool dsi_pll_5nm_is_hw_revision(
 		true : false;
 }
 
+static inline bool dsi_pll_7nm_v4_1_is_hw_revision(
+		struct dsi_pll_resource *rsc)
+{
+	return (rsc->pll_revision == DSI_PLL_7NM_V4_1) ?
+		true : false;
+}
+
 static inline int pll_reg_read(void *context, unsigned int reg,
 					unsigned int *val)
 {
@@ -2591,11 +2598,12 @@ int dsi_pll_clock_register_5nm(struct platform_device *pdev,
 		dsi0pll_vco_clk.priv = pll_res;
 		dsi0pll_shadow_vco_clk.priv = pll_res;
 
-		if (dsi_pll_5nm_is_hw_revision(pll_res)) {
-			dsi0pll_vco_clk.min_rate = 600000000;
-			dsi0pll_vco_clk.max_rate = 5000000000;
-			dsi0pll_shadow_vco_clk.min_rate = 600000000;
-			dsi0pll_shadow_vco_clk.max_rate = 5000000000;
+		if (dsi_pll_5nm_is_hw_revision(pll_res) ||
+			dsi_pll_7nm_v4_1_is_hw_revision(pll_res)) {
+				dsi0pll_vco_clk.min_rate = 600000000;
+				dsi0pll_vco_clk.max_rate = 5000000000;
+				dsi0pll_shadow_vco_clk.min_rate = 600000000;
+				dsi0pll_shadow_vco_clk.max_rate = 5000000000;
 		}
 
 		for (i = VCO_CLK_0; i <= SHADOW_CPHY_PCLK_SRC_0_CLK; i++) {
@@ -2660,11 +2668,12 @@ int dsi_pll_clock_register_5nm(struct platform_device *pdev,
 		dsi1pll_vco_clk.priv = pll_res;
 		dsi1pll_shadow_vco_clk.priv = pll_res;
 
-		if (dsi_pll_5nm_is_hw_revision(pll_res)) {
-			dsi1pll_vco_clk.min_rate = 600000000;
-			dsi1pll_vco_clk.max_rate = 5000000000;
-			dsi1pll_shadow_vco_clk.min_rate = 600000000;
-			dsi1pll_shadow_vco_clk.max_rate = 5000000000;
+		if (dsi_pll_5nm_is_hw_revision(pll_res) ||
+			dsi_pll_7nm_v4_1_is_hw_revision(pll_res)) {
+				dsi1pll_vco_clk.min_rate = 600000000;
+				dsi1pll_vco_clk.max_rate = 5000000000;
+				dsi1pll_shadow_vco_clk.min_rate = 600000000;
+				dsi1pll_shadow_vco_clk.max_rate = 5000000000;
 		}
 
 		for (i = VCO_CLK_1; i <= CPHY_PCLK_SRC_1_CLK; i++) {

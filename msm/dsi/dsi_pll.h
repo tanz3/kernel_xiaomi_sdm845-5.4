@@ -54,6 +54,7 @@ struct lpfr_cfg {
 
 enum {
 	DSI_PLL_5NM,
+	DSI_PLL_7NM_V4_1,
 	DSI_PLL_10NM,
 	DSI_PLL_14NM,
 	DSI_UNKNOWN_PLL,
