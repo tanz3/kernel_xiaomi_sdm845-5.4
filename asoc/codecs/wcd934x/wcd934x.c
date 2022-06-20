@@ -1850,6 +1850,11 @@ static int tavil_codec_enable_rx(struct snd_soc_dapm_widget *w,
 		dai->bus_down_in_recovery = false;
 		tavil_codec_enable_slim_port_intr(dai, component);
 		(void) tavil_codec_enable_slim_chmask(dai, true);
+		if (dai->rate == 0 || dai->bit_width == 0) {
+			dev_err(component->dev, "%s error rate %d bitwidth %d\n", __func__, dai->rate, dai->bit_width);
+			return -1;
+		}
+
 		ret = wcd9xxx_cfg_slim_sch_rx(core, &dai->wcd9xxx_ch_list,
 					      dai->rate, dai->bit_width,
 					      &dai->grph);
