@@ -50,14 +50,49 @@ enum mmm_color_fmts {
 	 * . . . . . . . . . . . . . . . .  V
 	 * . . . . . . . . . . . . . . . .  --> Buffer size alignment
 	 *
+	 * Y_Stride : Width aligned to 512
+	 * UV_Stride : Width aligned to 512
+	 * Y_Scanlines: Height aligned to 512
+	 * UV_Scanlines: Height/2 aligned to 256
+	 * Total size = align(Y_Stride * Y_Scanlines
+	 *          + UV_Stride * UV_Scanlines, 4096)
+	 */
+	MMM_COLOR_FMT_NV12,
+	/* Venus NV12_128:
+	 * YUV 4:2:0 image with a plane of 8 bit Y samples followed
+	 * by an interleaved U/V plane containing 8 bit 2x2 subsampled
+	 * colour difference samples.
+	 *
+	 * <-------- Y/UV_Stride -------->
+	 * <------- Width ------->
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  ^           ^
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  Height      |
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |          Y_Scanlines
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
+	 * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  V           |
+	 * . . . . . . . . . . . . . . . .              |
+	 * . . . . . . . . . . . . . . . .              |
+	 * . . . . . . . . . . . . . . . .              |
+	 * . . . . . . . . . . . . . . . .              V
+	 * U V U V U V U V U V U V . . . .  ^
+	 * U V U V U V U V U V U V . . . .  |
+	 * U V U V U V U V U V U V . . . .  |
+	 * U V U V U V U V U V U V . . . .  UV_Scanlines
+	 * . . . . . . . . . . . . . . . .  |
+	 * . . . . . . . . . . . . . . . .  V
+	 * . . . . . . . . . . . . . . . .  --> Buffer size alignment
+	 *
 	 * Y_Stride : Width aligned to 128
 	 * UV_Stride : Width aligned to 128
 	 * Y_Scanlines: Height aligned to 32
 	 * UV_Scanlines: Height/2 aligned to 16
 	 * Total size = align(Y_Stride * Y_Scanlines
-	 *          + UV_Stride * UV_Scanlines, 4096)
+	 *          + UV_Stride * UV_Scanlines + 4096 , 4096)
 	 */
-	MMM_COLOR_FMT_NV12,
+	MMM_COLOR_FMT_NV12_128,
 	/* Venus NV21:
 	 * YUV 4:2:0 image with a plane of 8 bit Y samples followed
 	 * by an interleaved V/U plane containing 8 bit 2x2 subsampled
@@ -85,10 +120,10 @@ enum mmm_color_fmts {
 	 * . . . . . . . . . . . . . . . .  V
 	 * . . . . . . . . . . . . . . . .  --> Padding & Buffer size alignment
 	 *
-	 * Y_Stride : Width aligned to 128
-	 * UV_Stride : Width aligned to 128
-	 * Y_Scanlines: Height aligned to 32
-	 * UV_Scanlines: Height/2 aligned to 16
+	 * Y_Stride : Width aligned to 512
+	 * UV_Stride : Width aligned to 512
+	 * Y_Scanlines: Height aligned to 512
+	 * UV_Scanlines: Height/2 aligned to 256
 	 * Total size = align(Y_Stride * Y_Scanlines
 	 *          + UV_Stride * UV_Scanlines, 4096)
 	 */
@@ -785,12 +820,13 @@ static inline unsigned int MMM_COLOR_FMT_Y_STRIDE(unsigned int color_fmt,
 		goto invalid_input;
 
 	switch (color_fmt) {
+	case MMM_COLOR_FMT_NV12:
+	case MMM_COLOR_FMT_NV21:
 	case MMM_COLOR_FMT_NV12_512:
 		alignment = 512;
 		stride = MMM_COLOR_FMT_ALIGN(width, alignment);
 		break;
-	case MMM_COLOR_FMT_NV12:
-	case MMM_COLOR_FMT_NV21:
+	case MMM_COLOR_FMT_NV12_128:
 	case MMM_COLOR_FMT_NV12_UBWC:
 		alignment = 128;
 		stride = MMM_COLOR_FMT_ALIGN(width, alignment);
@@ -828,12 +864,13 @@ static inline unsigned int MMM_COLOR_FMT_UV_STRIDE(unsigned int color_fmt,
 		goto invalid_input;
 
 	switch (color_fmt) {
+	case MMM_COLOR_FMT_NV21:
+	case MMM_COLOR_FMT_NV12:
 	case MMM_COLOR_FMT_NV12_512:
 		alignment = 512;
 		stride = MMM_COLOR_FMT_ALIGN(width, alignment);
 		break;
-	case MMM_COLOR_FMT_NV21:
-	case MMM_COLOR_FMT_NV12:
+	case MMM_COLOR_FMT_NV12_128:
 	case MMM_COLOR_FMT_NV12_UBWC:
 		alignment = 128;
 		stride = MMM_COLOR_FMT_ALIGN(width, alignment);
@@ -871,11 +908,12 @@ static inline unsigned int MMM_COLOR_FMT_Y_SCANLINES(unsigned int color_fmt,
 		goto invalid_input;
 
 	switch (color_fmt) {
+	case MMM_COLOR_FMT_NV12:
+	case MMM_COLOR_FMT_NV21:
 	case MMM_COLOR_FMT_NV12_512:
 		alignment = 512;
 		break;
-	case MMM_COLOR_FMT_NV12:
-	case MMM_COLOR_FMT_NV21:
+	case MMM_COLOR_FMT_NV12_128:
 	case MMM_COLOR_FMT_NV12_UBWC:
 	case MMM_COLOR_FMT_P010:
 		alignment = 32;
@@ -908,11 +946,12 @@ static inline unsigned int MMM_COLOR_FMT_UV_SCANLINES(unsigned int color_fmt,
 		goto invalid_input;
 
 	switch (color_fmt) {
+	case MMM_COLOR_FMT_NV21:
+	case MMM_COLOR_FMT_NV12:
 	case MMM_COLOR_FMT_NV12_512:
 		alignment = 256;
 		break;
-	case MMM_COLOR_FMT_NV21:
-	case MMM_COLOR_FMT_NV12:
+	case MMM_COLOR_FMT_NV12_128:
 	case MMM_COLOR_FMT_NV12_BPP10_UBWC:
 	case MMM_COLOR_FMT_P010_UBWC:
 	case MMM_COLOR_FMT_P010:
@@ -1214,6 +1253,11 @@ static inline unsigned int MMM_COLOR_FMT_BUFFER_SIZE(unsigned int color_fmt,
 	case MMM_COLOR_FMT_NV12:
 	case MMM_COLOR_FMT_P010:
 	case MMM_COLOR_FMT_NV12_512:
+		y_plane = y_stride * y_sclines;
+		uv_plane = uv_stride * uv_sclines;
+		size = y_plane + uv_plane;
+		break;
+	case MMM_COLOR_FMT_NV12_128:
 		uv_alignment = 4096;
 		y_plane = y_stride * y_sclines;
 		uv_plane = uv_stride * uv_sclines + uv_alignment;

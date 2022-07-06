@@ -1825,6 +1825,15 @@ static int sde_rsc_pm_freeze_late(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sde_rsc_priv *rsc = platform_get_drvdata(pdev);
+	int rc;
+
+	if (!rsc->sw_fs_enabled) {
+		/* Incase fast mode is enabled, set to normal mode */
+		rc = regulator_set_mode(rsc->fs, REGULATOR_MODE_NORMAL);
+		if (rc) {
+			pr_err("vdd reg normal mode set failed rc:%d\n", rc);
+		}
+	}
 
 	rsc->need_hwinit = true;
 
