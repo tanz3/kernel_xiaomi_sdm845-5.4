@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -3091,6 +3092,7 @@ static int dp_display_fsa4480_callback(struct notifier_block *self,
 static int dp_display_init_aux_switch(struct dp_display_private *dp)
 {
 	int rc = 0;
+	const char *external_aux_switch = "redriver";
 	const char *phandle = "qcom,dp-aux-switch";
 	struct notifier_block nb;
 
@@ -3108,6 +3110,10 @@ static int dp_display_init_aux_switch(struct dp_display_private *dp)
 		rc = -ENODEV;
 		goto end;
 	}
+
+	if (strcmp(dp->aux_switch_node->name,
+		 external_aux_switch) == 0)
+		goto end;
 
 	nb.notifier_call = dp_display_fsa4480_callback;
 	nb.priority = 0;
