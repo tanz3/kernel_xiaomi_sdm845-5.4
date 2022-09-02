@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1262,7 +1263,8 @@ static void _sde_kms_release_splash_resource(struct sde_kms *sde_kms,
 	if (splash_display->cont_splash_enabled) {
 		sde_encoder_update_caps_for_cont_splash(splash_display->encoder,
 				splash_display, false);
-		_sde_kms_free_splash_display_data(sde_kms, splash_display);
+		if(!sde_kms->reserve_splash_region)
+			_sde_kms_free_splash_display_data(sde_kms, splash_display);
 	}
 
 	/* remove the votes if all displays are done with splash */
@@ -3394,6 +3396,10 @@ static int sde_kms_cont_splash_config(struct msm_kms *kms,
 			encoder = dsi_display->bridge->base.encoder;
 			SDE_DEBUG("encoder name = %s\n", encoder->name);
 		}
+
+		if (dsi_display->reserve_splash_region)
+			sde_kms->reserve_splash_region = true;
+
 		memset(&info, 0x0, sizeof(info));
 		rc = dsi_display_get_info(NULL, &info, display);
 		if (rc) {
