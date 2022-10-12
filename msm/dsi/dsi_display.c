@@ -5393,7 +5393,7 @@ int dsi_display_cont_splash_config(void *dsi_display)
 	mutex_lock(&display->display_lock);
 
 	display->is_cont_splash_enabled = true;
-
+	display->is_splash_enable = true;
 	/* Update splash status for clock manager */
 	dsi_display_clk_mngr_update_splash_status(display->clk_mngr,
 				display->is_cont_splash_enabled);
@@ -5571,6 +5571,47 @@ static int dsi_display_pre_acquire(void *data)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_SLEEP
+static int dsi_display_pm_hibernate_helper(struct dsi_display *dsi_display) {
+
+	int rc = 0;
+
+	dsi_display->is_hibernate_exit = true;
+	rc = dsi_pwr_enable_regulator(&dsi_display->panel->power_info, true);
+	if (rc)
+		DSI_ERR("[%s] failed to disable vregs, rc=%d\n",
+				dsi_display->panel->name, rc);
+	rc = dsi_display_cont_splash_config(dsi_display);
+	if (rc)
+		DSI_ERR("failed to disable display, rc=%d\n",rc);
+
+	return rc;
+}
+
+static int dsi_display_pm_restore(struct device *dev)
+{
+	int ret = 0;
+	struct dsi_display *display;
+	struct platform_device *pdev = to_platform_device(dev);
+
+	if (!dev)
+		return -EINVAL;
+
+	display = platform_get_drvdata(pdev);
+
+	if(!display->is_splash_enable ||
+		!display->hibernate_splash_enable)
+		return 0;
+
+	ret = dsi_display_pm_hibernate_helper(display);
+	if (ret) {
+		DSI_ERR("dsi hibernate helper failed.\n");
+		return ret;
+	}
+	return ret;
+}
+#endif
 
 /**
  * dsi_display_bind - bind dsi device with controlling device
@@ -5862,6 +5903,10 @@ static const struct component_ops dsi_display_comp_ops = {
 	.unbind = dsi_display_unbind,
 };
 
+static const struct dev_pm_ops dsi_pm_ops = {
+	.restore_early = dsi_display_pm_restore,
+};
+
 static struct platform_driver dsi_display_driver = {
 	.probe = dsi_display_dev_probe,
 	.remove = dsi_display_dev_remove,
@@ -5869,6 +5914,7 @@ static struct platform_driver dsi_display_driver = {
 		.name = "msm-dsi-display",
 		.of_match_table = dsi_display_dt_match,
 		.suppress_bind_attrs = true,
+		.pm = &dsi_pm_ops,
 	},
 };
 
@@ -6010,6 +6056,10 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 	display->pdev = pdev;
 	display->boot_disp = boot_disp;
 
+	display->reserve_splash_region =
+		of_property_read_bool(node, "qcom,dsi-reserve-splash-region");
+	display->hibernate_splash_enable =
+		of_property_read_bool(node, "qcom,dsi-hibernate-splash-enable");
 	dsi_display_parse_cmdline_topology(display, index);
 
 	platform_set_drvdata(pdev, display);
@@ -7807,6 +7857,9 @@ int dsi_display_prepare(struct dsi_display *display)
 	if (!display->trusted_vm_env)
 		dsi_display_ctrl_isr_configure(display, true);
 
+	/* Unset DMS flag in case of hibernate exit */
+	if(display->is_hibernate_exit == true)
+		mode->dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
 		if (display->is_cont_splash_enabled &&
 		    display->config.panel_mode == DSI_OP_VIDEO_MODE) {
@@ -7908,7 +7961,7 @@ int dsi_display_prepare(struct dsi_display *display)
 	if (!is_skip_op_required(display)) {
 		/*
 		 * For continuous splash/trusted vm, skip panel prepare and
-		 * ctl reset since the pnael and ctrl is already in active
+		 * ctl reset since the panel and ctrl is already in active
 		 * state and panel on commands are not needed
 		 */
 		rc = dsi_display_soft_reset(display);
@@ -8321,7 +8374,8 @@ int dsi_display_enable(struct dsi_display *display)
 		rc = -EINVAL;
 		goto error_disable_panel;
 	}
-
+	if(display->is_hibernate_exit)
+		display->is_hibernate_exit = false;
 	goto error;
 
 error_disable_panel:

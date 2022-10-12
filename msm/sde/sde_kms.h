@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -305,6 +306,7 @@ struct sde_kms {
 	bool first_kickoff;
 	bool qdss_enabled;
 	bool pm_suspend_clk_dump;
+	bool reserve_splash_region;
 
 	cpumask_t irq_cpu_mask;
 	atomic_t irq_vote_count;

@@ -146,6 +146,10 @@ struct dsi_display_ext_bridge {
  * @list:             List pointer.
  * @is_active:        Is display active.
  * @is_cont_splash_enabled:  Is continuous splash enabled
+ * @is_splash_enable: Is continous splash enabled.
+ * @reserve_splash_region: To reserve splash region after handoff.
+ * @is_hibernate_exit: Set true, if hibernate exit.
+ * @hibernate_splash_enable: Support splash in hibernate exit.
  * @sw_te_using_wd:   Is software te enabled
  * @display_lock:     Mutex for dsi_display interface.
  * @disp_te_gpio:     GPIO for panel TE interrupt.
@@ -209,6 +213,10 @@ struct dsi_display {
 	const char *display_type;
 	struct list_head list;
 	bool is_cont_splash_enabled;
+	bool is_splash_enable;
+	bool reserve_splash_region;
+	bool is_hibernate_exit;
+	bool hibernate_splash_enable;
 	bool sw_te_using_wd;
 	struct mutex display_lock;
 	int disp_te_gpio;

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _DP_HPD_H_
@@ -12,6 +13,7 @@
 
 struct device;
 
+#ifndef CONFIG_DRM_MSM_DP_USBPD_LEGACY
 /**
  * enum dp_hpd_plug_orientation - plug orientation
  * @ORIENTATION_NONE:	Undefined or unspecified
@@ -23,6 +25,9 @@ enum dp_hpd_plug_orientation {
 	ORIENTATION_CC1,
 	ORIENTATION_CC2,
 };
+#else
+#include <linux/usb/usbpd.h>
+#endif
 
 /**
  * enum dp_hpd_type - dp hpd type
