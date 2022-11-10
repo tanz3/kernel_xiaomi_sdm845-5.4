@@ -43935,7 +43935,7 @@ static int msm_routing_probe(struct snd_soc_component *component)
 				      ARRAY_SIZE(internal_mclk_control));
 #endif
 
-	elliptic_add_platform_controls(platform);
+	elliptic_add_component_controls(component);
 	return 0;
 }
 
