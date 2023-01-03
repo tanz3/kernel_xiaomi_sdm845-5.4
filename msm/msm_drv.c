@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1788,6 +1789,14 @@ static struct drm_driver msm_driver = {
 	.patchlevel         = MSM_VERSION_PATCHLEVEL,
 };
 
+#define SET_SYSTEM_HIBERNATE_OPS(suspend_fn, resume_fn, freeze_fn, restore_fn) \
+	.suspend = suspend_fn, \
+	.resume = resume_fn, \
+	.freeze = freeze_fn, \
+	.thaw = resume_fn, \
+	.poweroff = suspend_fn, \
+	.restore = restore_fn, \
+
 #ifdef CONFIG_PM_SLEEP
 static int msm_pm_suspend(struct device *dev)
 {
@@ -1814,6 +1823,30 @@ static int msm_pm_suspend(struct device *dev)
 	return 0;
 }
 
+static int msm_pm_restore(struct device *dev)
+{
+	struct drm_device *ddev;
+	struct msm_drm_private *priv;
+	struct msm_kms *kms;
+
+	if (!dev)
+		return -EINVAL;
+
+	ddev = dev_get_drvdata(dev);
+	if (!ddev || !ddev->dev_private)
+		return -EINVAL;
+
+	priv = ddev->dev_private;
+	kms = priv->kms;
+
+	if (kms && kms->funcs && kms->funcs->pm_restore)
+		return kms->funcs->pm_restore(dev);
+
+	/* enable hot-plug polling */
+	drm_kms_helper_poll_enable(ddev);
+
+	return 0;
+}
 static int msm_pm_resume(struct device *dev)
 {
 	struct drm_device *ddev;
@@ -1874,7 +1907,7 @@ static int msm_runtime_resume(struct device *dev)
 #endif
 
 static const struct dev_pm_ops msm_pm_ops = {
-	SET_SYSTEM_SLEEP_PM_OPS(msm_pm_suspend, msm_pm_resume)
+	SET_SYSTEM_HIBERNATE_OPS(msm_pm_suspend, msm_pm_resume, msm_pm_suspend, msm_pm_restore)
 	SET_RUNTIME_PM_OPS(msm_runtime_suspend, msm_runtime_resume, NULL)
 };
 
