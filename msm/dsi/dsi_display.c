@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -5572,8 +5572,7 @@ static int dsi_display_pre_acquire(void *data)
 	return 0;
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int dsi_display_pm_hibernate_helper(struct dsi_display *dsi_display) {
+int dsi_display_pm_hibernate_helper(struct dsi_display *dsi_display) {
 
 	int rc = 0;
 
@@ -5588,30 +5587,6 @@ static int dsi_display_pm_hibernate_helper(struct dsi_display *dsi_display) {
 
 	return rc;
 }
-
-static int dsi_display_pm_restore(struct device *dev)
-{
-	int ret = 0;
-	struct dsi_display *display;
-	struct platform_device *pdev = to_platform_device(dev);
-
-	if (!dev)
-		return -EINVAL;
-
-	display = platform_get_drvdata(pdev);
-
-	if(!display->is_splash_enable ||
-		!display->hibernate_splash_enable)
-		return 0;
-
-	ret = dsi_display_pm_hibernate_helper(display);
-	if (ret) {
-		DSI_ERR("dsi hibernate helper failed.\n");
-		return ret;
-	}
-	return ret;
-}
-#endif
 
 /**
  * dsi_display_bind - bind dsi device with controlling device
@@ -5903,10 +5878,6 @@ static const struct component_ops dsi_display_comp_ops = {
 	.unbind = dsi_display_unbind,
 };
 
-static const struct dev_pm_ops dsi_pm_ops = {
-	.restore_early = dsi_display_pm_restore,
-};
-
 static struct platform_driver dsi_display_driver = {
 	.probe = dsi_display_dev_probe,
 	.remove = dsi_display_dev_remove,
@@ -5914,7 +5885,6 @@ static struct platform_driver dsi_display_driver = {
 		.name = "msm-dsi-display",
 		.of_match_table = dsi_display_dt_match,
 		.suppress_bind_attrs = true,
-		.pm = &dsi_pm_ops,
 	},
 };
 

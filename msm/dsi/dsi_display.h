@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -435,6 +435,16 @@ int dsi_display_get_default_lms(void *dsi_display, u32 *num_lm);
  * Return: error code.
  */
 int dsi_display_get_qsync_min_fps(void *dsi_display, u32 mode_fps);
+
+
+/**
+ * dsi_display_pm_hibernate_helper() - intializes cont splash config
+ * 		for hibernate exit case.
+ * @display:            Handle to display.
+ *
+ * Return: error code.
+ */
+int dsi_display_pm_hibernate_helper(struct dsi_display *dsi_display);
 
 /**
  * dsi_conn_get_lm_from_mode() - retrieves LM count from dsi mode priv info

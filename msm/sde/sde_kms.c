@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1224,7 +1224,8 @@ static void _sde_kms_free_splash_display_data(struct sde_kms *sde_kms,
 			!sde_kms->splash_data.num_splash_displays)
 		return;
 
-	if (sde_kms->splash_data.num_splash_regions)
+	if (sde_kms->splash_data.num_splash_regions
+			&& !sde_kms->reserve_splash_region)
 		_sde_kms_splash_mem_put(sde_kms, splash_display->splash);
 	sde_kms->splash_data.num_splash_displays--;
 	SDE_DEBUG("cont_splash handoff done, remaining:%d\n",
@@ -1263,8 +1264,7 @@ static void _sde_kms_release_splash_resource(struct sde_kms *sde_kms,
 	if (splash_display->cont_splash_enabled) {
 		sde_encoder_update_caps_for_cont_splash(splash_display->encoder,
 				splash_display, false);
-		if(!sde_kms->reserve_splash_region)
-			_sde_kms_free_splash_display_data(sde_kms, splash_display);
+		_sde_kms_free_splash_display_data(sde_kms, splash_display);
 	}
 
 	/* remove the votes if all displays are done with splash */
@@ -3743,6 +3743,28 @@ static void _sde_kms_pm_suspend_idle_helper(struct sde_kms *sde_kms,
 	kthread_flush_worker(&priv->pp_event_worker);
 }
 
+static int _sde_kms_pm_hibernate_helper(struct sde_kms *sde_kms)
+{
+	void *display;
+	struct dsi_display *dsi_display;
+	int i = 0, rc = 0;
+
+	for (i = 0; i < sde_kms->dsi_display_count; i++) {
+		display = sde_kms->dsi_displays[i];
+		dsi_display = (struct dsi_display *)display;
+
+		if (dsi_display->is_splash_enable &&
+				dsi_display->hibernate_splash_enable) {
+
+			/* handle dsi splash handoff */
+			rc = dsi_display_pm_hibernate_helper(dsi_display);
+			if (rc)
+				SDE_ERROR("failed to config dsi for splash handoff \n");
+		}
+	}
+	return rc;
+}
+
 static int sde_kms_pm_suspend(struct device *dev)
 {
 	struct drm_device *ddev;
@@ -3950,6 +3972,45 @@ end:
 	return 0;
 }
 
+static int sde_kms_pm_restore (struct device *dev)
+{
+	struct drm_device *ddev;
+	struct sde_kms *sde_kms;
+	struct msm_drm_private *priv;
+	int i;
+
+	if (!dev)
+		return -EINVAL;
+
+	ddev = dev_get_drvdata(dev);
+	if (!ddev || !ddev_to_msm_kms(ddev))
+		return -EINVAL;
+
+	sde_kms = to_sde_kms(ddev_to_msm_kms(ddev));
+
+	/*Handle splash handoff in hibernation exit */
+	_sde_kms_pm_hibernate_helper(sde_kms);
+
+	priv = sde_kms->dev->dev_private;
+
+	/* add bus vote to splash handoff */
+	for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++)
+		sde_power_data_bus_set_quota(&priv->phandle, i,
+			SDE_POWER_HANDLE_CONT_SPLASH_BUS_AB_QUOTA,
+			SDE_POWER_HANDLE_CONT_SPLASH_BUS_IB_QUOTA);
+
+	/*Call pm_resume sequence as part of restore*/
+	sde_kms_pm_resume(dev);
+
+	/* remove the votes if all displays are done with splash */
+	for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++)
+		sde_power_data_bus_set_quota(&priv->phandle, i,
+			SDE_POWER_HANDLE_ENABLE_BUS_AB_QUOTA,
+			SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA);
+
+	return 0;
+}
+
 static const struct msm_kms_funcs kms_funcs = {
 	.hw_init         = sde_kms_hw_init,
 	.postinit        = sde_kms_postinit,
@@ -3974,6 +4035,7 @@ static const struct msm_kms_funcs kms_funcs = {
 	.display_early_wakeup = sde_kms_display_early_wakeup,
 	.pm_suspend      = sde_kms_pm_suspend,
 	.pm_resume       = sde_kms_pm_resume,
+	.pm_restore      = sde_kms_pm_restore,
 	.destroy         = sde_kms_destroy,
 	.debugfs_destroy = sde_kms_debugfs_destroy,
 	.cont_splash_config = sde_kms_cont_splash_config,
