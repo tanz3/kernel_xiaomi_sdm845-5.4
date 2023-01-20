@@ -106,6 +106,7 @@ struct msm_kms_funcs {
 				const int32_t connector_id);
 	/* pm suspend/resume hooks */
 	int (*pm_suspend)(struct device *dev);
+	int (*pm_freeze_late)(struct device *dev);
 	int (*pm_resume)(struct device *dev);
 	int (*pm_restore)(struct device *dev);
 	/* cleanup: */

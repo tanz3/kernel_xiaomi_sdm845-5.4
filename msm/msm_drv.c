@@ -1789,15 +1789,37 @@ static struct drm_driver msm_driver = {
 	.patchlevel         = MSM_VERSION_PATCHLEVEL,
 };
 
-#define SET_SYSTEM_HIBERNATE_OPS(suspend_fn, resume_fn, freeze_fn, restore_fn) \
+#define SET_SYSTEM_HIBERNATE_OPS(suspend_fn, resume_fn, freeze_fn, freeze_late_fn, restore_fn) \
 	.suspend = suspend_fn, \
 	.resume = resume_fn, \
 	.freeze = freeze_fn, \
+	.freeze_late = freeze_late_fn, \
 	.thaw = resume_fn, \
 	.poweroff = suspend_fn, \
 	.restore = restore_fn, \
 
 #ifdef CONFIG_PM_SLEEP
+
+static int msm_pm_freeze_late(struct device *dev)
+{
+	struct drm_device *ddev;
+	struct sde_kms *sde_kms;
+
+	if (!dev)
+		return -EINVAL;
+
+	ddev = dev_get_drvdata(dev);
+
+	if (!ddev || !ddev->dev_private)
+		return -EINVAL;
+
+	sde_kms = to_sde_kms(ddev_to_msm_kms(ddev));
+
+	sde_kms->freeze_late = 1;
+
+	return 0;
+}
+
 static int msm_pm_suspend(struct device *dev)
 {
 	struct drm_device *ddev;
@@ -1907,7 +1929,7 @@ static int msm_runtime_resume(struct device *dev)
 #endif
 
 static const struct dev_pm_ops msm_pm_ops = {
-	SET_SYSTEM_HIBERNATE_OPS(msm_pm_suspend, msm_pm_resume, msm_pm_suspend, msm_pm_restore)
+	SET_SYSTEM_HIBERNATE_OPS(msm_pm_suspend, msm_pm_resume, msm_pm_suspend, msm_pm_freeze_late, msm_pm_restore)
 	SET_RUNTIME_PM_OPS(msm_runtime_suspend, msm_runtime_resume, NULL)
 };
 
