@@ -2348,6 +2348,38 @@ static int wled_flash_setup(struct wled *wled)
 	return 0;
 }
 
+int qpnp_wled_cabc(struct backlight_device *bl, bool enable)
+{
+	struct wled *wled;
+	int rc = 0, i;
+	u8 reg = 0, mask;
+
+	wled = bl_get_data(bl);
+	if (wled == NULL) {
+		pr_err("wled is null\n");
+		return -EPERM;
+	}
+
+	mutex_lock(&wled->lock);
+	wled->cfg.en_cabc = enable;
+	for (i = 0; i < wled->cfg.string_cfg; i++) {
+
+		/* CABC */
+		reg = wled->cfg.en_cabc ? (1  << 7) : 0;
+		mask = 0x80;
+		rc = regmap_update_bits(wled->regmap, wled->sink_addr + WLED_SINK_CABC_REG(i), mask, reg);
+		if (rc < 0)
+			goto fail_cabc;
+
+		pr_debug("%d cabc %d\n", i, wled->cfg.en_cabc);
+	}
+fail_cabc:
+	mutex_unlock(&wled->lock);
+
+	return rc;
+}
+EXPORT_SYMBOL_GPL(qpnp_wled_cabc);
+
 static int wled_configure(struct wled *wled, struct device *dev)
 {
 	struct wled_config *cfg = &wled->cfg;
