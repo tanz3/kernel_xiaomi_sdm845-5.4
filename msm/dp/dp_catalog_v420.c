@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -26,6 +27,10 @@
 #define MAX_VOLTAGE_LEVELS 4
 #define MAX_PRE_EMP_LEVELS 4
 
+#define MMSS_DP_PIXEL_M_V123 0x1B4
+#define MMSS_DP_PIXEL_N_V123 0x1B8
+#define MMSS_DP_PIXEL_M_V130 0x1B0
+#define MMSS_DP_PIXEL_N_V130 0x1B4
 static u8 const vm_pre_emphasis[MAX_VOLTAGE_LEVELS][MAX_PRE_EMP_LEVELS] = {
 	{0x00, 0x0E, 0x16, 0xFF},       /* pe0, 0 db */
 	{0x00, 0x0E, 0x16, 0xFF},       /* pe1, 3.5 db */
@@ -148,6 +153,7 @@ static void dp_catalog_panel_config_msa_v420(struct dp_catalog_panel *panel,
 	u32 const link_rate_hbr3 = 810000;
 	struct dp_catalog_private_v420 *catalog;
 	struct dp_io_data *io_data;
+	u32 version;
 
 	if (!panel || !rate) {
 		DP_ERR("invalid input\n");
@@ -160,13 +166,29 @@ static void dp_catalog_panel_config_msa_v420(struct dp_catalog_panel *panel,
 	}
 
 	catalog = dp_catalog_get_priv_v420(panel);
+	io_data = catalog->io->dp_ahb;
+	version = dp_read(DP_HW_VERSION);
+	DP_DEBUG("version: 0x%x\n", version);
+
+	/*
+	 * For DP controller versions >= 1.2.3
+	 */
 	io_data = catalog->io->dp_mmss_cc;
 
 	if (panel->stream_id == DP_STREAM_1)
 		reg_off = MMSS_DP_PIXEL1_M_V420 - MMSS_DP_PIXEL_M_V420;
-
-	pixel_m = dp_read(MMSS_DP_PIXEL_M_V420 + reg_off);
-	pixel_n = dp_read(MMSS_DP_PIXEL_N_V420 + reg_off);
+        /*
+         * For kona,version is 0x10020003,
+         below regiesters are different, have offset 4
+         *
+        */
+        if (version == 0x10020003) {
+	        pixel_m = dp_read(MMSS_DP_PIXEL_M_V123 + reg_off);
+	        pixel_n = dp_read(MMSS_DP_PIXEL_N_V123 + reg_off);
+        } else {
+	        pixel_m = dp_read(MMSS_DP_PIXEL_M_V130 + reg_off);
+	        pixel_n = dp_read(MMSS_DP_PIXEL_N_V130 + reg_off);
+        }
 	DP_DEBUG("pixel_m=0x%x, pixel_n=0x%x\n", pixel_m, pixel_n);
 
 	mvid = (pixel_m & 0xFFFF) * 5;
