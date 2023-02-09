@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -166,6 +167,7 @@ struct dsi_pll_resource {
 	 * suspend/resume and handoff is not finished.
 	 */
 	bool dfps_trigger;
+	int mode;	/* phy mode info */
 };
 
 struct dsi_pll_vco_clk {

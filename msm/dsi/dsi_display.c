@@ -2658,6 +2658,28 @@ error:
 	return rc;
 }
 
+int dsi_display_phy_pll_toggle(void *priv, bool prepare)
+{
+	int rc = 0;
+	struct dsi_display *display = priv;
+	struct dsi_display_ctrl *m_ctrl;
+
+	if (!display) {
+		DSI_ERR("invalid arguments\n");
+		return -EINVAL;
+	}
+
+	m_ctrl = &display->ctrl[display->clk_master_idx];
+	if (!m_ctrl->phy) {
+		DSI_ERR("[%s] PHY not found\n", display->name);
+		return -EINVAL;
+	}
+
+	rc = dsi_phy_pll_toggle(m_ctrl->phy, prepare);
+
+	return rc;
+}
+
 #if defined (CONFIG_DEEPSLEEP) || defined (CONFIG_HIBERNATION)
 static int dsi_display_unset_clk_src(struct dsi_display *display)
 {
@@ -5703,6 +5725,7 @@ static int dsi_display_bind(struct device *dev,
 	info.pre_clkon_cb = dsi_pre_clkon_cb;
 	info.post_clkoff_cb = dsi_post_clkoff_cb;
 	info.post_clkon_cb = dsi_post_clkon_cb;
+	info.phy_pll_toggle_cb = dsi_display_phy_pll_toggle;
 	info.priv_data = display;
 	info.master_ndx = display->clk_master_idx;
 	info.dsi_ctrl_count = display->ctrl_count;

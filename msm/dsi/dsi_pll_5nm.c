@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -282,6 +283,30 @@ struct dsi_pll_5nm {
 	struct dsi_pll_config pll_configuration;
 	struct dsi_pll_regs reg_setup;
 	bool cphy_enabled;
+};
+
+enum dsi_pll_mode {
+	dsi_pll_1080p = 1,
+	dsi_pll_4k_60 = 2,
+	dsi_pll_4k_30 = 3,
+	dsi_pll_mode_max
+};
+
+struct mode_timing_info {
+	u16 xres;
+	u16 yres;
+	u8 bpp;
+	u8 fps;
+	u8 lanes;
+	u8 intfs;
+};
+
+static struct mode_timing_info mode_supp_timing_cfg[] = {
+	{0, 0, 0, 0, 0, 0}, /* 0 */
+	{1920, 1080, 24, 60, 4, 2}, /* 1080P 24bit 60Hz 4lane 2port */
+	{3840, 2160, 24, 60, 4, 2}, /* 3840x2160 24bit 60Hz 4Lane 2ports */
+	{3840, 2160, 24, 30, 4, 2}, /* 3840x2160 24bit 30Hz 4Lane 2ports */
+	{0xffff, 0xffff, 0xff, 0xff, 0xff},
 };
 
 static inline bool dsi_pll_5nm_is_hw_revision(
@@ -1466,6 +1491,21 @@ static int vco_5nm_prepare(struct clk_hw *hw)
 
 	if ((pll->vco_cached_rate != 0) &&
 	    (pll->vco_cached_rate == clk_hw_get_rate(hw))) {
+		if (pll->mode == dsi_pll_1080p) {
+			pll->vco_cached_rate = 891000000;
+			pll->cached_cfg0 = 97;
+			pll->cached_outdiv = 1;
+		} else if (pll->mode == dsi_pll_4k_60) {
+			pll->vco_cached_rate = 1782000000;
+			pll->cached_cfg0 = 97;
+			pll->cached_outdiv = 0;
+		} else if (pll->mode == dsi_pll_4k_30) {
+			pll->vco_cached_rate = 891000000;
+			pll->cached_cfg0 = 97;
+			pll->cached_outdiv = 0;
+		}
+		pr_debug("pll->mode=%d\n", pll->mode);
+
 		rc = vco_5nm_set_rate(hw, pll->vco_cached_rate,
 				pll->vco_cached_rate);
 		if (rc) {
@@ -1473,8 +1513,8 @@ static int vco_5nm_prepare(struct clk_hw *hw)
 			       pll->index, rc);
 			return rc;
 		}
-		pr_debug("cfg0=%d, cfg1=%d\n", pll->cached_cfg0,
-			pll->cached_cfg1);
+		pr_debug("cfg0=%d, cfg1=%d, cached_outdiv=%d\n", pll->cached_cfg0,
+			pll->cached_cfg1, pll->cached_outdiv);
 		DSI_PLL_REG_W(pll->phy_base, PHY_CMN_CLK_CFG0,
 					pll->cached_cfg0);
 		if (pll->slave)
@@ -2699,5 +2739,35 @@ int dsi_pll_clock_register_5nm(struct platform_device *pdev,
 		return rc;
 	}
 clk_register_fail:
+	return rc;
+}
+
+int dsi_pll_5nm_toggle(void *pll, bool prepare, void *mode)
+{
+	int rc = 0, i = 0;
+	struct dsi_pll_resource *pll_res = (struct dsi_pll_resource *)pll;
+	struct dsi_mode_info *mode_info = (struct dsi_mode_info *)mode;
+
+	if (!pll_res) {
+		DSI_PLL_ERR(pll_res, "dsi pll resources are not available\n");
+		return -EINVAL;
+	}
+	pr_debug("[%s][%d] prepare=%d !\n", __FUNCTION__, __LINE__, prepare);
+
+	if (prepare) {
+		while (mode_supp_timing_cfg[i].xres != 0xffff) {
+			if ((mode_supp_timing_cfg[i].xres/2) == mode_info->h_active &&
+				mode_supp_timing_cfg[i].yres == mode_info->v_active &&
+				mode_supp_timing_cfg[i].fps == mode_info->refresh_rate) {
+				pll_res->mode = i;
+				pr_debug("[%s][%d] pll_res->mode=%d !\n", __FUNCTION__, __LINE__, pll_res->mode);
+				return rc;
+			}
+			pll_res->mode = 0;
+			i++;
+		}
+	} else {
+		pll_res->mode = 0;
+	}
 	return rc;
 }

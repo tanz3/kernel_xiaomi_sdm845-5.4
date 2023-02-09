@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -461,6 +462,14 @@ static int dsi_phy_driver_probe(struct platform_device *pdev)
 		goto fail_settings;
 	}
 
+	rc = dsi_catalog_phy_pll_setup(&dsi_phy->hw,
+			dsi_phy->pll->pll_revision);
+	if (rc) {
+		DSI_PHY_ERR(dsi_phy, "Catalog does not support PLL version (%d)\n",
+		       dsi_phy->pll->pll_revision);
+		goto fail_settings;
+	}
+
 	item->phy = dsi_phy;
 
 	mutex_lock(&dsi_phy_list_lock);
@@ -757,6 +766,24 @@ int dsi_phy_set_power_state(struct msm_dsi_phy *dsi_phy, bool enable)
 	dsi_phy->power_state = enable;
 error:
 	mutex_unlock(&dsi_phy->phy_lock);
+	return rc;
+}
+
+
+/**
+ * dsi_phy_pll_toggle() -   Toggle DSI PHY PLL
+ * @dsi_phy:                DSI PHY handle.
+ * @prepare:		    specifies if PLL needs to be turned on or not.
+ *
+ * Return: error code.
+ */
+int dsi_phy_pll_toggle(struct msm_dsi_phy *phy, bool prepare)
+{
+	int rc = 0;
+
+	if (phy->hw.ops.pll_toggle)
+		rc = phy->hw.ops.pll_toggle(phy->pll, prepare, &phy->mode);
+
 	return rc;
 }
 
