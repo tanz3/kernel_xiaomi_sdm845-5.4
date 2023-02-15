@@ -8252,6 +8252,7 @@ static void dsi_display_panel_id_notification(struct dsi_display *display)
 int dsi_display_enable(struct dsi_display *display)
 {
 	int rc = 0;
+	int mask;
 	struct dsi_display_mode *mode;
 
 	if (!display || !display->panel) {
@@ -8284,6 +8285,11 @@ int dsi_display_enable(struct dsi_display *display)
 		DSI_DEBUG("cont splash enabled, display enable not required\n");
 		dsi_display_panel_id_notification(display);
 
+		if (display->is_hibernate_exit) {
+			/* mask underflow/overflow errors in hibernation exit*/
+			mask = BIT(DSI_FIFO_UNDERFLOW) | BIT(DSI_FIFO_OVERFLOW);
+			dsi_display_mask_ctrl_error_interrupts(display, mask, true);
+		}
 		return 0;
 	}
 
@@ -8350,8 +8356,12 @@ int dsi_display_enable(struct dsi_display *display)
 		rc = -EINVAL;
 		goto error_disable_panel;
 	}
-	if(display->is_hibernate_exit)
+
+	if(display->is_hibernate_exit) {
 		display->is_hibernate_exit = false;
+		/* Unmask error interrupts*/
+		dsi_display_mask_ctrl_error_interrupts(display, mask, false);
+	}
 	goto error;
 
 error_disable_panel:
