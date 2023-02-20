@@ -859,6 +859,9 @@ static bool dp_display_send_hpd_event(struct dp_display_private *dp)
 	rc = kobject_uevent_env(&dev->primary->kdev->kobj, KOBJ_CHANGE, envp);
 	DP_INFO("uevent %s: %d\n", rc ? "failure" : "success", rc);
 
+	if(dev->mode_config.funcs->output_poll_changed)
+		dev->mode_config.funcs->output_poll_changed(dev);
+	drm_client_dev_hotplug(dev);
 	return true;
 }
 
