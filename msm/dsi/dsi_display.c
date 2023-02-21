@@ -8252,7 +8252,7 @@ static void dsi_display_panel_id_notification(struct dsi_display *display)
 int dsi_display_enable(struct dsi_display *display)
 {
 	int rc = 0;
-	int mask;
+	int mask = 0;
 	struct dsi_display_mode *mode;
 
 	if (!display || !display->panel) {
