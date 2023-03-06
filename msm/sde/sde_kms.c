@@ -3988,6 +3988,15 @@ static int sde_kms_pm_restore (struct device *dev)
 
 	sde_kms = to_sde_kms(ddev_to_msm_kms(ddev));
 
+	if (!sde_kms->freeze_late) {
+
+		/*call pm_resume sequence when hibernation entry is aborted*/
+		sde_kms_pm_resume(dev);
+
+		return 0;
+
+	}
+
 	/*Handle splash handoff in hibernation exit */
 	_sde_kms_pm_hibernate_helper(sde_kms);
 
@@ -4007,6 +4016,8 @@ static int sde_kms_pm_restore (struct device *dev)
 		sde_power_data_bus_set_quota(&priv->phandle, i,
 			SDE_POWER_HANDLE_ENABLE_BUS_AB_QUOTA,
 			SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA);
+
+	sde_kms->freeze_late = 0;
 
 	return 0;
 }
