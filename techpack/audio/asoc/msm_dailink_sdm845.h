@@ -334,12 +334,12 @@ SND_SOC_DAILINK_DEFS(slimbus_0_tx,
 
 SND_SOC_DAILINK_DEFS(slimbus_1_rx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-tdm.16386")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_rx1")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_rx2")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
 
 SND_SOC_DAILINK_DEFS(slimbus_1_tx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-tdm.16387")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_tx3")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_tx2")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
 
 SND_SOC_DAILINK_DEFS(slimbus_2_rx,
@@ -354,7 +354,7 @@ SND_SOC_DAILINK_DEFS(slimbus_3_rx,
 
 SND_SOC_DAILINK_DEFS(slimbus_3_tx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-tdm.16391")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_tx1")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("tavil_codec", "tavil_tx3")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
 
 SND_SOC_DAILINK_DEFS(slimbus_4_rx,
@@ -434,11 +434,6 @@ SND_SOC_DAILINK_DEFS(tert_mi2s_rx,
 SND_SOC_DAILINK_DEFS(tert_mi2s_tx,
 	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-mi2s.5")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-tx")),
-	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
-
-SND_SOC_DAILINK_DEFS(quat_mi2s_rx,
-	DAILINK_COMP_ARRAY(COMP_CPU("msm-dai-q6-mi2s.6")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("msm-stub-codec.1", "msm-stub-rx")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("msm-pcm-routing")));
 
 SND_SOC_DAILINK_DEFS(quat_mi2s_tx,
