@@ -31,6 +31,16 @@ LINUXINCLUDE    += -include $(srctree)/techpack/display/config/gki_holidispconf.
      endif
 endif
 
+ifeq ($(CONFIG_ARCH_SDM845), y)
+     ifeq ($(CONFIG_QGKI), y)
+		include $(srctree)/techpack/display/config/sdm845disp.conf
+LINUXINCLUDE    += -include $(srctree)/techpack/display/config/sdm845dispconf.h
+     else
+		include $(srctree)/techpack/display/config/gki_sdm845disp.conf
+LINUXINCLUDE    += -include $(srctree)/techpack/display/config/gki_sdm845dispconf.h
+     endif
+endif
+
 LINUXINCLUDE    += \
 		   -I$(srctree)/techpack/display/include/uapi/display \
 		   -I$(srctree)/techpack/display/include
