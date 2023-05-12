@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -374,5 +375,14 @@ void dsi_phy_set_continuous_clk(struct msm_dsi_phy *phy, bool enable);
  * Return: error code.
  */
 int dsi_phy_get_io_resources(struct msm_io_res *io_res);
+
+/**
+ * dsi_phy_pll_toggle() -   Toggle DSI PHY PLL
+ * @dsi_phy:                DSI PHY handle.
+ * @prepare:		    specifies if PLL needs to be turned on or not.
+ *
+ * Return: error code.
+ */
+int dsi_phy_pll_toggle(struct msm_dsi_phy *dsi_phy, bool prepare);
 
 #endif /* _DSI_PHY_H_ */

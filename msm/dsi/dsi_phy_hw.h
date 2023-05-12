@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -45,6 +46,22 @@ enum dsi_phy_version {
 	DSI_PHY_VERSION_4_1, /* 7nm */
 	DSI_PHY_VERSION_4_2, /* 5nm */
 	DSI_PHY_VERSION_MAX
+};
+
+/**
+ * enum dsi_pll_version - DSI PHY PLL version enumeration
+ * @DSI_PLL_VERSION_5NM:        5nm PLL
+ * @DSI_PLL_VERSION_7NM_V4_1:   7nm PLL
+ * @DSI_PLL_VERSION_10NM:	10nm PLL
+ * @DSI_PLL_VERSION_14NM:	14nm PLL
+ * @DSI_PLL_VERSION_UNKNOWN:	Unknown PLL version
+ */
+enum dsi_pll_version {
+	DSI_PLL_VERSION_5NM,
+	DSI_PLL_VERSION_7NM_V4_1,
+	DSI_PLL_VERSION_10NM,
+	DSI_PLL_VERSION_14NM,
+	DSI_PLL_VERSION_UNKNOWN
 };
 
 /**
@@ -344,6 +361,14 @@ struct dsi_phy_hw_ops {
 	void *timing_ops;
 	struct phy_ulps_config_ops ulps_ops;
 	struct phy_dyn_refresh_ops dyn_refresh_ops;
+
+	/**
+	 * pll_toggle() - Toggle the DSI PHY PLL
+	 * @pll:	  Pointer to DSI PLL.
+	 * @prepare:	  specify if PLL needs to be turned on or off.
+	 */
+	int (*pll_toggle)(void *pll, bool prepare, void *mode);
+
 };
 
 /**
