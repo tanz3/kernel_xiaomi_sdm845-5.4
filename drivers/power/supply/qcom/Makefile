@@ -15,3 +15,7 @@ obj-$(CONFIG_SMB1390_CHARGE_PUMP_PSY)   += qcom-smb1390-charger.o
 qcom-smb1390-charger-y += smb1390-charger-psy.o pmic-voter.o
 obj-$(CONFIG_QTI_QBG)	+= qti-qbg-main.o
 qti-qbg-main-y	+= qti-qbg.o qbg-sdam.o qbg-battery-profile.o battery-profile-loader.o
+
+# Legacy
+obj-$(CONFIG_QPNP_FG_GEN3)		+= qpnp-fg-gen3.o fg-memif.o fg-util.o
+obj-$(CONFIG_QPNP_SMB2)			+= step-chg-jeita.o battery.o qpnp-smb2.o smb-lib.o pmic-voter.o storm-watch.o
