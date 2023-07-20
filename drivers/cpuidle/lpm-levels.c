@@ -123,6 +123,9 @@ static void cluster_prepare(struct lpm_cluster *cluster,
 static bool sleep_disabled;
 module_param_named(sleep_disabled, sleep_disabled, bool, 0664);
 
+static bool sleep_disabled_touch;
+module_param_named(sleep_disabled_touch, sleep_disabled_touch, bool, 0664);
+
 #ifdef CONFIG_SMP
 static int lpm_cpu_qos_notify(struct notifier_block *nb,
 		unsigned long val, void *ptr);
@@ -207,6 +210,13 @@ uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops)
 }
 EXPORT_SYMBOL(register_system_pm_ops);
 #endif
+
+void lpm_disable_for_input(bool on)
+{
+	sleep_disabled_touch = !!on;
+	return;
+}
+EXPORT_SYMBOL(lpm_disable_for_input);
 
 static void update_debug_pc_event(enum debug_event event, uint32_t arg1,
 		uint32_t arg2, uint32_t arg3, uint32_t arg4)
@@ -663,7 +673,7 @@ static inline bool lpm_disallowed(s64 sleep_us, int cpu, struct lpm_cpu *pm_cpu)
 	if (check_cpu_isolated(cpu))
 		goto out;
 
-	if (sleep_disabled || sleep_us < 0)
+	if (sleep_disabled || sleep_us < 0 || sleep_disabled_touch)
 		return true;
 
 	bias_time = sched_lpm_disallowed_time(cpu);
