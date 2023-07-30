@@ -358,6 +358,11 @@ struct drm_device {
 	/* Scatter gather memory */
 	struct drm_sg_mem *sg;
 #endif
+
+	int doze_state;
+	bool fp_quickon;
+	int pre_state;
+	int doze_brightness;
 };
 
 #endif

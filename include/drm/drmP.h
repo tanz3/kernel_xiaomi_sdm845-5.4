@@ -93,11 +93,14 @@ struct dma_buf_attachment;
 struct pci_dev;
 struct pci_controller;
 
-/*
- * NOTE: drmP.h is obsolete - do NOT add anything to this file
- *
- * Do not include drmP.h in new files.
- * Work is ongoing to remove drmP.h includes from existing files
- */
+/**
+*AOD brightness, hight brightness level 60nit, low brightness level 5nit
+*/
+#define DOZE_MIN_BRIGHTNESS_LEVEL	5
+enum {
+	DOZE_BRIGHTNESS_INVALID = 0,
+	DOZE_BRIGHTNESS_HBM,
+	DOZE_BRIGHTNESS_LBM,
+};
 
 #endif
