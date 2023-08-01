@@ -32,5 +32,9 @@ subdir-y += zte
 dtstree	:= $(srctree)/$(src)
 vendor  := $(dtstree)/vendor
 ifneq "$(wildcard $(vendor)/Makefile)" ""
-    subdir-y += vendor
+    ifeq ($(CONFIG_ARCH_SDM845),y)
+        subdir-y += qcom-legacy
+    else
+        subdir-y += vendor
+    endif
 endif
