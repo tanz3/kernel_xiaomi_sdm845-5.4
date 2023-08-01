@@ -52,6 +52,8 @@ static const struct of_device_id dsi_display_dt_match[] = {
 	{}
 };
 
+struct dsi_display *primary_display;
+
 bool is_skip_op_required(struct dsi_display *display)
 {
 	if (!display)
@@ -1001,7 +1003,7 @@ int dsi_display_read_panel(struct dsi_panel *panel, struct dsi_read_config *read
 	cmds->msg.rx_buf = read_config->rbuf;
 	cmds->msg.rx_len = read_config->cmds_rlen;
 
-	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &(cmds->msg), flags);
+	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &(cmds->msg), &flags);
 	if (rc <= 0) {
 		pr_err("rx cmd transfer failed rc=%d\n", rc);
 		goto exit;
@@ -7014,8 +7016,6 @@ int dsi_display_get_info(struct drm_connector *connector,
 	if (display->panel->esd_config.esd_enabled &&
 			!display->sw_te_using_wd)
 		info->capabilities |= MSM_DISPLAY_ESD_ENABLED;
-
-	g_notify_data.is_primary = info->is_primary;
 
 	info->te_source = display->te_source;
 
