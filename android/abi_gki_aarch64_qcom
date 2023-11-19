@@ -1131,6 +1131,7 @@
   ida_free
   idr_alloc
   idr_alloc_cyclic
+  idr_alloc_u32
   idr_destroy
   idr_find
   idr_for_each
@@ -1371,6 +1372,7 @@
   kthread_stop
   kthread_unpark
   kthread_worker_fn
+  ktime_add_safe
   ktime_get
   ktime_get_mono_fast_ns
   ktime_get_real_seconds
@@ -2033,6 +2035,7 @@
   reset_control_put
   reset_control_reset
   revalidate_disk
+  revert_creds
   rfkill_alloc
   rfkill_destroy
   rfkill_init_sw_state
@@ -2248,6 +2251,7 @@
   smp_call_function
   smp_call_function_single
   snd_card_free
+  snd_card_free_when_closed
   snd_card_new
   snd_card_register
   snd_ctl_add
@@ -2416,6 +2420,7 @@
   strrchr
   strreplace
   strscpy
+  strscpy_pad
   strsep
   strstr
   __sw_hweight32
@@ -2556,6 +2561,7 @@
   ufshcd_remove
   ufshcd_uic_hibern8_enter
   ufshcd_uic_hibern8_exit
+  uhid_hid_driver
   __uio_register_device
   uio_unregister_device
   unlock_new_inode
