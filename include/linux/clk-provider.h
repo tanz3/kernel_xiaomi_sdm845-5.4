@@ -34,6 +34,8 @@
 #define CLK_DUTY_CYCLE_PARENT	BIT(13)
 #define CLK_DONT_HOLD_STATE	BIT(14) /* Don't hold state */
 #define CLK_IS_MEASURE		BIT(15) /* clock used for measurement only */
+/* do not call clk_change_rate on the clock's children */
+#define CLK_CHILD_NO_RATE_PROP	BIT(16)
 
 struct clk;
 struct clk_hw;
