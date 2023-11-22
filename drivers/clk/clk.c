@@ -2190,6 +2190,9 @@ static void clk_change_rate(struct clk_core *core)
 	if (core->flags & CLK_RECALC_NEW_RATES)
 		(void)clk_calc_new_rates(core, core->new_rate);
 
+	if (core->flags & CLK_CHILD_NO_RATE_PROP)
+		return;
+
 	if (core->ops->post_rate_change)
 		core->ops->post_rate_change(core->hw, old_rate, core->rate);
 
