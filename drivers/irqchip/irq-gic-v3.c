@@ -174,7 +174,7 @@ static u32 gicd_reg_bits_per_irq[NUM_SAVED_GICD_REGS] = {
 
 #define for_each_spi_irq_word(i, reg) \
 	for (i = 0; \
-	    i < DIV_ROUND_UP(IRQ_NR_BOUND(gic_data.irq_nr) - SPI_START_IRQ, \
+	    i < DIV_ROUND_UP(IRQ_NR_BOUND(gic_data.ppi_nr) - SPI_START_IRQ, \
 			     32 / gicd_reg_bits_per_irq[reg]); \
 	    i++)
 
@@ -314,7 +314,7 @@ void gic_v3_dist_save(void)
 		}
 	}
 
-	for (i = 32; i < IRQ_NR_BOUND(gic_data.irq_nr); i++) {
+	for (i = 32; i < IRQ_NR_BOUND(gic_data.ppi_nr); i++) {
 		gic_data.saved_spi_router[i] =
 			gic_read_irouter(base + GICD_IROUTER + i * 8);
 		gic_data.changed_spi_router[i] = 0;
@@ -358,7 +358,7 @@ static void _gic_v3_dist_check_irouter(void)
 	u64 current_irouter_cfg = 0;
 	int i;
 
-	for (i = 32; i < IRQ_NR_BOUND(gic_data.irq_nr); i++) {
+	for (i = 32; i < IRQ_NR_BOUND(gic_data.ppi_nr); i++) {
 		if (test_bit(i, irqs_ignore_restore))
 			continue;
 		current_irouter_cfg = gic_read_irouter(
@@ -393,7 +393,7 @@ static void _gic_v3_dist_restore_set_reg(u32 offset)
 {
 	void __iomem *base = gic_data.dist_base;
 	int i, j = SPI_START_IRQ, l;
-	int irq_nr = IRQ_NR_BOUND(gic_data.irq_nr) - SPI_START_IRQ;
+	int irq_nr = IRQ_NR_BOUND(gic_data.ppi_nr) - SPI_START_IRQ;
 
 	for (i = 0; i < DIV_ROUND_UP(irq_nr, 32); i++, j += 32) {
 		u32 reg_val = readl_relaxed_no_log(base + offset + i * 4 + 4);
@@ -427,7 +427,7 @@ static void _gic_v3_dist_restore_irouter(void)
 	void __iomem *base = gic_data.dist_base;
 	int i;
 
-	for (i = 32; i < IRQ_NR_BOUND(gic_data.irq_nr); i++) {
+	for (i = 32; i < IRQ_NR_BOUND(gic_data.ppi_nr); i++) {
 		if (test_bit(i, irqs_ignore_restore))
 			continue;
 		if (gic_data.changed_spi_router[i]) {
@@ -444,7 +444,7 @@ static void _gic_v3_dist_clear_reg(u32 offset)
 {
 	void __iomem *base = gic_data.dist_base;
 	int i, j = SPI_START_IRQ, l;
-	int irq_nr = IRQ_NR_BOUND(gic_data.irq_nr) - SPI_START_IRQ;
+	int irq_nr = IRQ_NR_BOUND(gic_data.ppi_nr) - SPI_START_IRQ;
 
 	for (i = 0; i < DIV_ROUND_UP(irq_nr, 32); i++, j += 32) {
 		u32 clear = 0;
@@ -508,7 +508,7 @@ void gic_v3_dist_restore(void)
 	_gic_v3_dist_check_isenabler();
 	_gic_v3_dist_check_irouter();
 
-	if (bitmap_empty(irqs_restore, IRQ_NR_BOUND(gic_data.irq_nr)))
+	if (bitmap_empty(irqs_restore, IRQ_NR_BOUND(gic_data.ppi_nr)))
 		return;
 
 	_gic_v3_dist_set_icenabler();
