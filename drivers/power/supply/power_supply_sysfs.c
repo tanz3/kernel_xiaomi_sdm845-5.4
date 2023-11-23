@@ -132,6 +132,19 @@ static const char * const POWER_SUPPLY_SCOPE_TEXT[] = {
 	[POWER_SUPPLY_SCOPE_DEVICE]	= "Device",
 };
 
+static const char * const power_supply_usbc_text[] = {
+	"Nothing attached", "Sink attached", "Powered cable w/ sink",
+	"Debug Accessory", "Audio Adapter", "Powered cable w/o sink",
+	"Source attached (default current)",
+	"Source attached (medium current)",
+	"Source attached (high current)",
+	"Non compliant",
+};
+
+static const char * const power_supply_usbc_pr_text[] = {
+	"none", "dual power role", "sink", "source"
+};
+
 static struct power_supply_attr power_supply_attrs[] = {
 	/* Properties of type `int' */
 	POWER_SUPPLY_ENUM_ATTR(STATUS),
@@ -299,6 +312,14 @@ static ssize_t power_supply_show_property(struct device *dev,
 	case POWER_SUPPLY_PROP_USB_TYPE:
 		ret = power_supply_show_usb_type(dev, psy->desc,
 						&value, buf);
+		break;
+	case POWER_SUPPLY_PROP_TYPEC_MODE:
+		ret = sprintf(buf, "%s\n",
+			      power_supply_usbc_text[value.intval]);
+		break;
+	case POWER_SUPPLY_PROP_TYPEC_POWER_ROLE:
+		ret = sprintf(buf, "%s\n",
+			      power_supply_usbc_pr_text[value.intval]);
 		break;
 	case POWER_SUPPLY_PROP_MODEL_NAME ... POWER_SUPPLY_PROP_SERIAL_NUMBER:
 		ret = sprintf(buf, "%s\n", value.strval);

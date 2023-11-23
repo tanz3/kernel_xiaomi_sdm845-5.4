@@ -19,6 +19,7 @@
 #include <linux/completion.h>
 #include <linux/soc/qcom/fsa4480-i2c.h>
 #include <linux/usb/typec.h>
+#include <linux/qti_power_supply.h>
 #include <sound/soc.h>
 #include <sound/jack.h>
 #include <asoc/msm-cdc-pinctrl.h>
@@ -1672,7 +1673,7 @@ static int wcd_mbhc_usb_c_analog_setup_gpios(struct wcd_mbhc *mbhc,
 	memset(&pval, 0, sizeof(pval));
 
 	if (active) {
-		pval.intval = POWER_SUPPLY_TYPEC_PR_SOURCE;
+		pval.intval = QTI_POWER_SUPPLY_TYPEC_PR_SOURCE;
 		if (power_supply_set_property(mbhc->usb_psy,
 				POWER_SUPPLY_PROP_TYPEC_POWER_ROLE, &pval))
 			dev_info(component->dev, "%s: force PR_SOURCE mode unsuccessful\n",
@@ -1686,7 +1687,7 @@ static int wcd_mbhc_usb_c_analog_setup_gpios(struct wcd_mbhc *mbhc,
 		if (rc == 0 && config->usbc_force_gpio_p)
 			rc = msm_cdc_pinctrl_select_active_state(
 				config->usbc_force_gpio_p);
-		mbhc->usbc_mode = POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER;
+		mbhc->usbc_mode = QTI_POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER;
 	} else {
 		/* no delay is required when disabling GPIOs */
 		if (config->usbc_en1_gpio_p)
@@ -1697,7 +1698,7 @@ static int wcd_mbhc_usb_c_analog_setup_gpios(struct wcd_mbhc *mbhc,
 				config->usbc_force_gpio_p);
 
 		if (mbhc->usbc_force_pr_mode) {
-			pval.intval = POWER_SUPPLY_TYPEC_PR_DUAL;
+			pval.intval = QTI_POWER_SUPPLY_TYPEC_PR_DUAL;
 			if (power_supply_set_property(mbhc->usb_psy,
 				POWER_SUPPLY_PROP_TYPEC_POWER_ROLE, &pval))
 				dev_info(component->dev, "%s: force PR_DUAL mode unsuccessful\n",
@@ -1706,7 +1707,7 @@ static int wcd_mbhc_usb_c_analog_setup_gpios(struct wcd_mbhc *mbhc,
 			mbhc->usbc_force_pr_mode = false;
 		}
 
-		mbhc->usbc_mode = POWER_SUPPLY_TYPEC_NONE;
+		mbhc->usbc_mode = QTI_POWER_SUPPLY_TYPEC_NONE;
 		if (mbhc->mbhc_cfg->swap_gnd_mic)
 			mbhc->mbhc_cfg->swap_gnd_mic(component, false);
 	}
@@ -1721,7 +1722,7 @@ static void wcd_mbhc_usbc_analog_work_fn(struct work_struct *work)
 		container_of(work, struct wcd_mbhc, usbc_analog_work);
 
 	wcd_mbhc_usb_c_analog_setup_gpios(mbhc,
-			mbhc->usbc_mode != POWER_SUPPLY_TYPEC_NONE);
+			mbhc->usbc_mode != QTI_POWER_SUPPLY_TYPEC_NONE);
 }
 
 /* this callback function is used to process PMI notification */
@@ -1747,11 +1748,11 @@ static int wcd_mbhc_usb_c_event_changed(struct notifier_block *nb,
 	dev_dbg(component->dev, "%s: USB change event received\n",
 		__func__);
 	dev_dbg(component->dev, "%s: supply mode %d, expected %d\n", __func__,
-		mode.intval, POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER);
+		mode.intval, QTI_POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER);
 
 	switch (mode.intval) {
-	case POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER:
-	case POWER_SUPPLY_TYPEC_NONE:
+	case QTI_POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER:
+	case QTI_POWER_SUPPLY_TYPEC_NONE:
 		dev_dbg(component->dev, "%s: usbc_mode: %d; mode.intval: %d\n",
 			__func__, mbhc->usbc_mode, mode.intval);
 

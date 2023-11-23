@@ -10,6 +10,7 @@
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/mutex.h>
+#include <linux/of.h>
 
 #include <soc/qcom/socinfo.h>
 

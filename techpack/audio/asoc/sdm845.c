@@ -3316,6 +3316,68 @@ static const struct snd_soc_dapm_widget msm_dapm_widgets[] = {
 	SND_SOC_DAPM_MIC("Digital Mic5", NULL),
 };
 
+/* set audio task affinity to core 1 & 2 */
+static const unsigned int audio_core_list[] = {1, 2};
+static cpumask_t audio_cpu_map = CPU_MASK_NONE;
+static struct dev_pm_qos_request *msm_audio_req;
+static unsigned int qos_client_active_cnt;
+
+static void msm_audio_add_qos_request(void)
+{
+	int i;
+	int cpu = 0;
+
+	msm_audio_req = kcalloc(num_possible_cpus(),
+		sizeof(struct dev_pm_qos_request), GFP_KERNEL);
+	if (!msm_audio_req)
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(audio_core_list); i++) {
+		if (audio_core_list[i] >= num_possible_cpus())
+			pr_err("%s incorrect cpu id: %d specified.\n",
+				__func__, audio_core_list[i]);
+		else
+			cpumask_set_cpu(audio_core_list[i], &audio_cpu_map);
+	}
+
+	for_each_cpu(cpu, &audio_cpu_map) {
+		dev_pm_qos_add_request(get_cpu_device(cpu),
+			&msm_audio_req[cpu],
+			DEV_PM_QOS_RESUME_LATENCY,
+			PM_QOS_CPU_DMA_LAT_DEFAULT_VALUE);
+		pr_debug("%s set cpu affinity to core %d.\n", __func__, cpu);
+	}
+}
+
+static void msm_audio_remove_qos_request(void)
+{
+	int cpu = 0;
+
+	if (msm_audio_req) {
+		for_each_cpu(cpu, &audio_cpu_map) {
+			dev_pm_qos_remove_request(
+				&msm_audio_req[cpu]);
+			pr_debug("%s remove cpu affinity of core %d.\n",
+				__func__, cpu);
+		}
+		kfree(msm_audio_req);
+	}
+}
+
+static void msm_audio_update_qos_request(u32 latency)
+{
+	int cpu = 0;
+
+	if (msm_audio_req) {
+		for_each_cpu(cpu, &audio_cpu_map) {
+			dev_pm_qos_update_request(
+				&msm_audio_req[cpu], latency);
+			pr_debug("%s update latency of core %d to %ul.\n",
+				__func__, cpu, latency);
+		}
+	}
+}
+
 static inline int param_is_mask(int p)
 {
 	return (p >= SNDRV_PCM_HW_PARAM_FIRST_MASK) &&
@@ -4888,53 +4950,6 @@ static struct snd_soc_ops sdm845_tdm_be_ops = {
 	.startup = sdm845_tdm_snd_startup,
 	.shutdown = sdm845_tdm_snd_shutdown
 };
-
-/* set audio task affinity to core 1 & 2 */
-static const unsigned int audio_core_list[] = {1, 2};
-static cpumask_t audio_cpu_map = CPU_MASK_NONE;
-static struct dev_pm_qos_request *msm_audio_req;
-static unsigned int qos_client_active_cnt;
-
-static void msm_audio_add_qos_request(void)
-{
-	int i;
-	int cpu = 0;
-
-	msm_audio_req = kcalloc(num_possible_cpus(),
-		sizeof(struct dev_pm_qos_request), GFP_KERNEL);
-	if (!msm_audio_req)
-		return;
-
-	for (i = 0; i < ARRAY_SIZE(audio_core_list); i++) {
-		if (audio_core_list[i] >= num_possible_cpus())
-			pr_err("%s incorrect cpu id: %d specified.\n",
-				__func__, audio_core_list[i]);
-		else
-			cpumask_set_cpu(audio_core_list[i], &audio_cpu_map);
-	}
-
-	for_each_cpu(cpu, &audio_cpu_map) {
-		dev_pm_qos_add_request(get_cpu_device(cpu),
-			&msm_audio_req[cpu],
-			DEV_PM_QOS_RESUME_LATENCY,
-			PM_QOS_CPU_DMA_LAT_DEFAULT_VALUE);
-		pr_debug("%s set cpu affinity to core %d.\n", __func__, cpu);
-	}
-}
-
-static void msm_audio_update_qos_request(u32 latency)
-{
-	int cpu = 0;
-
-	if (msm_audio_req) {
-		for_each_cpu(cpu, &audio_cpu_map) {
-			dev_pm_qos_update_request(
-				&msm_audio_req[cpu], latency);
-			pr_debug("%s update latency of core %d to %ul.\n",
-				__func__, cpu, latency);
-		}
-	}
-}
 
 static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)
 {
@@ -6716,11 +6731,15 @@ static int msm_init_wsa_dev(struct platform_device *pdev,
 	u32 wsa_dev_cnt;
 	int i;
 	struct msm_wsa881x_dev_info *wsa881x_dev_info;
+	struct snd_soc_dai_link_component *dlc;
 	const char *wsa_auxdev_name_prefix[1];
 	char *dev_name_str = NULL;
 	int found = 0;
 	int ret = 0;
 
+	dlc = devm_kcalloc(&pdev->dev, 1,
+			sizeof(struct snd_soc_dai_link_component),
+			GFP_KERNEL);
 	/* Get maximum WSA device count for this platform */
 	ret = of_property_read_u32(pdev->dev.of_node,
 				   "qcom,wsa-max-devs", &wsa_max_devs);
@@ -6806,7 +6825,9 @@ static int msm_init_wsa_dev(struct platform_device *pdev,
 			ret = -EINVAL;
 			goto err_free_dev_info;
 		}
-		if (soc_find_component_locked(wsa_of_node, NULL)) {
+		dlc->of_node = wsa_of_node;
+		dlc->name = NULL;
+		if (soc_find_component_locked(dlc)) {
 			/* WSA device registered with ALSA core */
 			wsa881x_dev_info[found].of_node = wsa_of_node;
 			wsa881x_dev_info[found].index = i;
@@ -6868,9 +6889,9 @@ static int msm_init_wsa_dev(struct platform_device *pdev,
 		}
 
 		snprintf(dev_name_str, strlen("wsa881x.%d"), "wsa881x.%d", i);
-		msm_aux_dev[i].name = dev_name_str;
-		msm_aux_dev[i].codec_name = NULL;
-		msm_aux_dev[i].codec_of_node =
+		msm_aux_dev[i].dlc.name = dev_name_str;
+		msm_aux_dev[i].dlc.dai_name = NULL;
+		msm_aux_dev[i].dlc.of_node =
 					wsa881x_dev_info[i].of_node;
 		msm_aux_dev[i].init = msm_wsa881x_init;
 		msm_codec_conf[i].dev_name = NULL;
