@@ -347,19 +347,19 @@
 &pm8998_vadc {
 	vph_pwr@83 {
 		label = "vph_pwr";
-		reg = <ADC_VPH_PWR>;
+		reg = <ADC5_VPH_PWR>;
 		qcom,pre-scaling = <1 1>;
 	};
 
 	vcoin@85 {
 		label = "vcoin";
-		reg = <ADC_VCOIN>;
+		reg = <ADC5_VCOIN>;
 		qcom,pre-scaling = <1 1>;
 	};
 
 	xo_therm@4c {
 		label = "xo_therm";
-		reg = <ADC_XO_THERM_PU2>;
+		reg = <ADC5_XO_THERM_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -367,7 +367,7 @@
 
 	msm_therm@4d {
 		label = "msm_therm";
-		reg = <ADC_AMUX_THM1_PU2>;
+		reg = <ADC5_AMUX_THM1_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -375,7 +375,7 @@
 
 	pa_therm1@4f {
 		label = "pa_therm1";
-		reg = <ADC_AMUX_THM3_PU2>;
+		reg = <ADC5_AMUX_THM3_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -383,7 +383,7 @@
 
 	quiet_therm@51 {
 		label = "quiet_therm";
-		reg = <ADC_AMUX_THM5_PU2>;
+		reg = <ADC5_AMUX_THM5_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -391,42 +391,42 @@
 };
 
 &pm8998_adc_tm {
-	io-channels = <&pm8998_vadc ADC_VPH_PWR>,
-			<&pm8998_vadc ADC_XO_THERM_PU2>,
-			<&pm8998_vadc ADC_AMUX_THM1_PU2>,
-			<&pm8998_vadc ADC_AMUX_THM3_PU2>,
-			<&pm8998_vadc ADC_AMUX_THM5_PU2>;
+	io-channels = <&pm8998_vadc ADC5_VPH_PWR>,
+			<&pm8998_vadc ADC5_XO_THERM_100K_PU>,
+			<&pm8998_vadc ADC5_AMUX_THM1_100K_PU>,
+			<&pm8998_vadc ADC5_AMUX_THM3_100K_PU>,
+			<&pm8998_vadc ADC5_AMUX_THM5_100K_PU>;
 
 	/* Channel nodes */
 	vph_pwr@83 {
 		label = "vph_pwr";
-		reg = <ADC_VPH_PWR>;
+		reg = <ADC5_VPH_PWR>;
 	};
 
 	xo_therm@4c {
 		label = "xo_therm";
-		reg = <ADC_XO_THERM_PU2>;
+		reg = <ADC5_XO_THERM_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
 
 	msm_therm@4d {
 		label = "msm_therm";
-		reg = <ADC_AMUX_THM1_PU2>;
+		reg = <ADC5_AMUX_THM1_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
 
 	pa_therm1@4f {
 		label = "pa_therm1";
-		reg = <ADC_AMUX_THM3_PU2>;
+		reg = <ADC5_AMUX_THM3_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
 
 	quiet_therm@51 {
 		label = "quiet_therm";
-		reg = <ADC_AMUX_THM5_PU2>;
+		reg = <ADC5_AMUX_THM5_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 	};
