@@ -231,6 +231,16 @@
 		qcom,sde-reg-dma-version = <0x1>;
 		qcom,sde-reg-dma-trigger-off = <0x119c>;
 
+		qcom,sde-reg-bus,vectors-KBps = <0 0>,
+				<0 74000>,
+				<0 148000>,
+				<0 265000>;
+
+		interconnects =
+			<&mmss_noc MASTER_MDP0 &mem_noc SLAVE_EBI1>,
+			<&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_DISPLAY_CFG>;
+		interconnect-names = "qcom,sde-data-bus0", "qcom,sde-reg-bus";
+
 		qcom,sde-sspp-vig-blocks {
 			qcom,sde-vig-csc-off = <0x1a00>;
 			qcom,sde-vig-qseed-off = <0xa00>;
@@ -249,47 +259,6 @@
 			qcom,sde-dspp-hist = <0x800 0x00010007>;
 			qcom,sde-dspp-dither = <0x82c 0x00010007>;
 		};
-
-		smmu_sde_unsec: qcom,smmu_sde_unsec_cb {
-			compatible = "qcom,smmu_sde_unsec";
-			iommus = <&apps_smmu 0x880 0x8>,
-				<&apps_smmu 0xc80 0x8>;
-			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
-			qcom,iommu-faults = "non-fatal";
-			qcom,iommu-earlymap; /* for cont-splash */
-		};
-
-		smmu_sde_sec: qcom,smmu_sde_sec_cb {
-			compatible = "qcom,smmu_sde_sec";
-			iommus = <&apps_smmu 0x881 0x8>,
-			       <&apps_smmu 0xc81 0x8>;
-			qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
-			qcom,iommu-faults = "non-fatal";
-			qcom,iommu-vmid = <0xa>; /* VMID_CP_PIXEL */
-		};
-
-		/* data and reg bus scale settings */
-		qcom,sde-data-bus {
-			qcom,msm-bus,name = "mdss_sde";
-			qcom,msm-bus,num-cases = <3>;
-			qcom,msm-bus,num-paths = <2>;
-			qcom,msm-bus,vectors-KBps =
-				<22 512 0 0>, <23 512 0 0>,
-				<22 512 0 6400000>, <23 512 0 6400000>,
-				<22 512 0 6400000>, <23 512 0 6400000>;
-		};
-
-		qcom,sde-reg-bus {
-			qcom,msm-bus,name = "mdss_reg";
-			qcom,msm-bus,num-cases = <4>;
-			qcom,msm-bus,num-paths = <1>;
-			qcom,msm-bus,active-only;
-			qcom,msm-bus,vectors-KBps =
-				<1 590 0 0>,
-				<1 590 0 76800>,
-				<1 590 0 150000>,
-				<1 590 0 300000>;
-		};
 	};
 
 	sde_rscc: qcom,sde_rscc@af20000 {
@@ -304,43 +273,14 @@
 		clocks = <&clock_dispcc DISP_CC_MDSS_RSCC_VSYNC_CLK>,
 			<&clock_dispcc DISP_CC_MDSS_RSCC_AHB_CLK>;
 		clock-names = "vsync_clk", "iface_clk";
-		clock-rate = <0 0>;
 
 		qcom,sde-dram-channels = <2>;
 
-		/* data and reg bus scale settings */
-		qcom,sde-data-bus {
-			qcom,msm-bus,name = "disp_rsc_mnoc";
-			qcom,msm-bus,active-only;
-			qcom,msm-bus,num-cases = <3>;
-			qcom,msm-bus,num-paths = <2>;
-			qcom,msm-bus,vectors-KBps =
-			    <20003 20515 0 0>, <20004 20515 0 0>,
-			    <20003 20515 0 6400000>, <20004 20515 0 6400000>,
-			    <20003 20515 0 6400000>, <20004 20515 0 6400000>;
-		};
-
-		qcom,sde-llcc-bus {
-			qcom,msm-bus,name = "disp_rsc_llcc";
-			qcom,msm-bus,active-only;
-			qcom,msm-bus,num-cases = <3>;
-			qcom,msm-bus,num-paths = <1>;
-			qcom,msm-bus,vectors-KBps =
-			    <20001 20513 0 0>,
-			    <20001 20513 0 6400000>,
-			    <20001 20513 0 6400000>;
-		};
-
-		qcom,sde-ebi-bus {
-			qcom,msm-bus,name = "disp_rsc_ebi";
-			qcom,msm-bus,active-only;
-			qcom,msm-bus,num-cases = <3>;
-			qcom,msm-bus,num-paths = <1>;
-			qcom,msm-bus,vectors-KBps =
-			    <20000 20512 0 0>,
-			    <20000 20512 0 6400000>,
-			    <20000 20512 0 6400000>;
-		};
+		qcom,msm-bus,active-only;
+		interconnects =
+			<&mmss_noc MASTER_MDP0_DISP &gem_noc SLAVE_LLCC_DISP>,
+			<&mem_noc MASTER_LLCC_DISP &mem_noc SLAVE_EBI1_DISP>;
+		interconnect-names = "qcom,sde-data-bus0","qcom,sde-ebi-bus";
 	};
 
 	mdss_rotator: qcom,mdss_rotator@ae00000 {
@@ -355,14 +295,13 @@
 		qcom,mdss-rot-mode = <1>;
 		qcom,mdss-highest-bank-bit = <0x2>;
 
-		/* Bus Scale Settings */
-		qcom,msm-bus,name = "mdss_rotator";
-		qcom,msm-bus,num-cases = <3>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<25 512 0 0>,
-			<25 512 0 6400000>,
-			<25 512 0 6400000>;
+		interconnects =
+			<&mmss_noc MASTER_ROTATOR &mem_noc SLAVE_EBI1>,
+			<&gem_noc MASTER_APPSS_PROC
+				&config_noc SLAVE_DISPLAY_CFG>;
+		interconnect-names = "qcom,rot-data-bus0",
+				 "qcom,sde-reg-bus";
+		qcom,msm-bus,active-only;
 
 		rot-vdd-supply = <&mdss_core_gdsc>;
 		qcom,supply-names = "rot-vdd";
@@ -654,5 +593,21 @@
 				qcom,supply-disable-load = <32>;
 			};
 		};
+	};
+
+	smmu_sde_sec: qcom,smmu_sde_sec_cb {
+		compatible = "qcom,smmu_sde_sec";
+		iommus = <&apps_smmu 0x881 0x8>,
+		       <&apps_smmu 0xc81 0x8>;
+		qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+		qcom,iommu-vmid = <0xa>; /* VMID_CP_PIXEL */
+	};
+
+	smmu_sde_unsec: qcom,smmu_sde_unsec_cb {
+		compatible = "qcom,smmu_sde_unsec";
+		iommus = <&apps_smmu 0x880 0x8>,
+			<&apps_smmu 0xc80 0x8>;
+		qcom,iommu-dma-addr-pool = <0x00020000 0xfffe0000>;
+		qcom,iommu-earlymap; /* for cont-splash */
 	};
 };

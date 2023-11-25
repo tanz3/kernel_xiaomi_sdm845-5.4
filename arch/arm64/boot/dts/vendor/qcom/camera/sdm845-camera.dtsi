@@ -414,24 +414,9 @@
 			<0 0 0 80000000 0 0>;
 		clock-cntl-level = "suspend", "minsvs", "lowsvs", "svs",
 			"svs_l1", "nominal", "turbo";
-		qcom,msm-bus,name = "cam_ahb";
-		qcom,msm-bus,num-cases = <7>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 0>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 76500>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 76500>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 150000>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 150000>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 300000>,
-			<MSM_BUS_MASTER_AMPSS_M0
-			MSM_BUS_SLAVE_CAMERA_CFG 0 300000>;
+		interconnect-names = "cam_ahb";
+		interconnects =<&gem_noc MASTER_APPSS_PROC
+			&config_noc SLAVE_CAMERA_CFG>;
 		vdd-corners = <RPMH_REGULATOR_LEVEL_RETENTION
 			RPMH_REGULATOR_LEVEL_MIN_SVS
 			RPMH_REGULATOR_LEVEL_LOW_SVS
@@ -465,76 +450,46 @@
 			qcom,axi-port1 {
 				qcom,axi-port-name = "cam_hf_1";
 				qcom,axi-port-mnoc {
-					qcom,msm-bus,name = "cam_hf_1_mnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_HF0
-					MSM_BUS_SLAVE_EBI_CH0 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_HF0
-					MSM_BUS_SLAVE_EBI_CH0 0 0>;
+					interconnect-names = "cam_hf_1_mnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_HF0
+					&mem_noc SLAVE_EBI1>;
 				};
 				qcom,axi-port-camnoc {
-					qcom,msm-bus,name = "cam_hf_1_camnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_HF0_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_HF0_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>;
+					interconnect-names = "cam_hf_1_camnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_HF0_UNCOMP
+					&mmss_noc SLAVE_CAMNOC_UNCOMP>;
 				};
 			};
 			qcom,axi-port2 {
 				qcom,axi-port-name = "cam_hf_2";
 				qcom,axi-port-mnoc {
-					qcom,msm-bus,name = "cam_hf_2_mnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_HF1
-					MSM_BUS_SLAVE_EBI_CH0 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_HF1
-					MSM_BUS_SLAVE_EBI_CH0 0 0>;
+					interconnect-names = "cam_hf_2_mnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_HF1
+					&mem_noc SLAVE_EBI1>;
 				};
 				qcom,axi-port-camnoc {
-					qcom,msm-bus,name = "cam_hf_2_camnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_HF1_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_HF1_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>;
+					interconnect-names = "cam_hf_2_camnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_HF1_UNCOMP
+					&mmss_noc SLAVE_CAMNOC_UNCOMP>;
 				};
 			};
 			qcom,axi-port3 {
 				qcom,axi-port-name = "cam_sf_1";
 				qcom,axi-port-mnoc {
-					qcom,msm-bus,name = "cam_sf_1_mnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_SF
-					MSM_BUS_SLAVE_EBI_CH0 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_SF
-					MSM_BUS_SLAVE_EBI_CH0 0 0>;
+					interconnect-names = "cam_sf_1_mnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_SF
+					&mem_noc SLAVE_EBI1>;
 				};
 				qcom,axi-port-camnoc {
-					qcom,msm-bus,name = "cam_sf_1_camnoc";
-					qcom,msm-bus-vector-dyn-vote;
-					qcom,msm-bus,num-cases = <2>;
-					qcom,msm-bus,num-paths = <1>;
-					qcom,msm-bus,vectors-KBps =
-					<MSM_BUS_MASTER_CAMNOC_SF_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>,
-					<MSM_BUS_MASTER_CAMNOC_SF_UNCOMP
-					MSM_BUS_SLAVE_CAMNOC_UNCOMP 0 0>;
+					interconnect-names = "cam_sf_1_camnoc";
+					interconnects =
+					<&mmss_noc MASTER_CAMNOC_SF_UNCOMP
+					&mmss_noc SLAVE_CAMNOC_UNCOMP>;
 				};
 			};
 		};
