@@ -931,7 +931,7 @@
 	};
 
 	cpu_cpu_llcc_bw: qcom,cpu-cpu-llcc-bw {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_LLCC>;
@@ -964,7 +964,7 @@
 	};
 
 	cpu_llcc_ddr_bw: qcom,cpu-llcc-ddr-bw {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
 		qcom,src-dst-ports =
 			<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0>;
@@ -984,8 +984,29 @@
 		qcom,byte-mid-match = <0xe000>;
 	};
 
+	cpu0_cpu_l3_lat: qcom,cpu0-cpu-l3-lat {
+		compatible = "qcom,devfreq-icc-l3";
+		reg = <0x17d41000 0x4>;
+		reg-names = "ftbl-base";
+		qcom,ftbl-row-size = <0x20>;
+		governor = "performance";
+		interconnects = <&osm_l3 MASTER_OSM_L3_APPS
+				&osm_l3 SLAVE_OSM_L3_CLUSTER0>;
+	};
+
+	cpu0_cpu_l3_tbl: qcom,cpu0-cpu-l3-tbl {
+		qcom,core-dev-table =
+			<  300000  300000000 >,
+			<  748800  576000000 >,
+			<  979200  652800000 >,
+			< 1209600  806400000 >,
+			< 1516800  883200000 >,
+			< 1593600  960000000 >,
+			< 1708800 1305600000 >;
+	};
+
 	cpu0_cpu_llcc_lat: qcom,cpu0-cpu-llcc-lat {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "powersave";
 		qcom,src-dst-ports = <1 512>;
 		qcom,active-only;
@@ -993,7 +1014,7 @@
 	};
 
 	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "powersave";
 		qcom,src-dst-ports = <1 512>;
 		qcom,active-only;
@@ -1007,21 +1028,13 @@
 		cpu0_cpu_l3_latmon: qcom,cpu0-cpu-l3-latmon {
 			compatible = "qcom,arm-memlat-mon";
 			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
-			qcom,target-dev = <&cpu0_l3>;
+			qcom,target-dev = <&cpu0_cpu_l3_lat>;
 			qcom,cachemiss-ev = <0x17>;
-			qcom,core-dev-table =
-				<  300000  300000000 >,
-				<  748800  576000000 >,
-				<  979200  652800000 >,
-				< 1209600  806400000 >,
-				< 1516800  883200000 >,
-				< 1593600  960000000 >,
-				< 1708800 1305600000 >;
+			qcom,core-dev-table = <&cpu0_cpu_l3_tbl>;
 		};
 
 		cpu0_cpu_llcc_latmon: qcom,cpu0-cpu-llcc-latmon {
 			compatible = "qcom,arm-memlat-mon";
-			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
 			qcom,target-dev = <&cpu0_cpu_llcc_lat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
@@ -1034,15 +1047,34 @@
 
 		cpu0_computemon: qcom,cpu0-computeon {
 			compatible = "qcom,arm-compute-mon";
-			qcom,cpulist = <&CPU0 &CPU1 &CPU2 &CPU3>;
 			qcom,target-dev = <&cpu0_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1708800 MHZ_TO_MBPS(200, 4) >;
 		};
 	};
 
+	cpu4_cpu_l3_lat: qcom,cpu4-cpu-l3-lat {
+		compatible = "qcom,devfreq-icc-l3";
+		reg = <0x17d43110 0x500>;
+		reg-names = "ftbl-base";
+		qcom,ftbl-row-size = <0x20>;
+		governor = "performance";
+		interconnects = <&osm_l3 MASTER_OSM_L3_APPS
+				&osm_l3 SLAVE_OSM_L3_CLUSTER1>;
+	};
+
+	cpu4_cpu_l3_tbl: qcom,cpu4_cpu_l3_tbl {
+		qcom,core-dev-table =
+			<  300000  300000000 >,
+			< 1036800  576000000 >,
+			< 1190400  806400000 >,
+			< 1574400  883200000 >,
+			< 1804800  960000000 >,
+			< 1958400 1305600000 >;
+	};
+
 	cpu4_cpu_llcc_lat: qcom,cpu4-cpu-llcc-lat {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc";
 		governor = "powersave";
 		qcom,src-dst-ports = <1 512>;
 		qcom,active-only;
@@ -1050,7 +1082,7 @@
 	};
 
 	cpu4_cpu_ddr_latfloor: qcom,cpu4-cpu-ddr-latfloor {
-		compatible = "qcom,devbw";
+		compatible = "qcom,devfreq-icc-ddr";
 		governor = "powersave";
 		qcom,src-dst-ports = <1 512>;
 		qcom,active-only;
@@ -1064,20 +1096,13 @@
 		cpu4_cpu_l3_latmon: qcom,cpu4-cpu-l3-latmon {
 			compatible = "qcom,arm-memlat-mon";
 			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
-			qcom,target-dev = <&cpu4_l3>;
+			qcom,target-dev = <&cpu4_cpu_l3_lat>;
 			qcom,cachemiss-ev = <0x17>;
-			qcom,core-dev-table =
-				<  300000  300000000 >,
-				< 1036800  576000000 >,
-				< 1190400  806400000 >,
-				< 1574400  883200000 >,
-				< 1804800  960000000 >,
-				< 1958400 1305600000 >;
+			qcom,core-dev-table = <&cpu4_cpu_l3_tbl>;
 		};
 
 		cpu4_cpu_llcc_latmon: qcom,cpu4-cpu-llcc-latmon {
 			compatible = "qcom,arm-memlat-mon";
-			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
 			qcom,target-dev = <&cpu4_cpu_llcc_lat>;
 			qcom,cachemiss-ev = <0x2A>;
 			qcom,core-dev-table =
@@ -1093,7 +1118,6 @@
 
 		cpu4_computemon: qcom,cpu4-computeon {
 			compatible = "qcom,arm-compute-mon";
-			qcom,cpulist = <&CPU4 &CPU5 &CPU6 &CPU7>;
 			qcom,target-dev = <&cpu4_cpu_ddr_latfloor>;
 			qcom,core-dev-table =
 				< 1881600 MHZ_TO_MBPS(200, 4) >,
@@ -1115,26 +1139,6 @@
 		qcom,active-only;
 		status = "ok";
 		operating-points-v2 = <&keepalive_opp_table>;
-	};
-
-	qcom,devfreq-l3 {
-		compatible = "qcom,devfreq-fw";
-		reg = <0x17d41000 0x4>, <0x17d43110 0x500>, <0x17d43920 0x4>;
-		reg-names = "en-base", "ftbl-base", "perf-base";
-
-		qcom,ftbl-row-size = <32>;
-
-		cpu0_l3: qcom,cpu0-cpu-l3-lat {
-			compatible = "qcom,devfreq-fw-voter";
-		};
-
-		cpu4_l3: qcom,cpu4-cpu-l3-lat {
-			compatible = "qcom,devfreq-fw-voter";
-		};
-
-		cdsp_l3: qcom,cdsp-cdsp-l3-lat {
-			compatible = "qcom,devfreq-fw-voter";
-		};
 	};
 
 	cpu_pmu: cpu-pmu {
