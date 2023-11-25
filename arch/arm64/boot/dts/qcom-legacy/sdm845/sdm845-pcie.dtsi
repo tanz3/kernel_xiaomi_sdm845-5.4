@@ -196,6 +196,9 @@
 		qcom,vreg-cx-voltage-level = <RPMH_REGULATOR_LEVEL_MAX
 						RPMH_REGULATOR_LEVEL_SVS 0>;
 
+		interconnect-names = "icc_path";
+		interconnects = <&aggre2_noc MASTER_PCIE_0 &mem_noc SLAVE_EBI1>;
+
 		qcom,l1-supported;
 		qcom,l1ss-supported;
 		qcom,aux-clk-sync;
@@ -212,7 +215,7 @@
 		qcom,msi-gicm-base = <0x2c0>;
 
 		qcom,pcie-phy-ver = <0x30>;
-		qcom,use-19p2mhz-aux-clk;
+		qcom,aux-clk-freq = <20>; /* 19.2 MHz */
 
 		qcom,smmu-sid-base = <0x1c10>;
 
@@ -232,13 +235,6 @@
 			<0xd00 &apps_smmu 0x1c1d 0x1>,
 			<0xe00 &apps_smmu 0x1c1e 0x1>,
 			<0xf00 &apps_smmu 0x1c1f 0x1>;
-
-		qcom,msm-bus,name = "pcie0";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-				<45 512 0 0>,
-				<45 512 500 800>;
 
 		clocks = <&clock_gcc GCC_PCIE_0_PIPE_CLK>,
 			<&clock_rpmh RPMH_CXO_CLK>,

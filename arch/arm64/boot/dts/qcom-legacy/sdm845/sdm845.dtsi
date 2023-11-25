@@ -20,15 +20,20 @@
 #include <dt-bindings/clock/qcom,rpmh.h>
 #include <dt-bindings/clock/qcom,aop-qmp.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
+#include <dt-bindings/interconnect/qcom,icc.h>
+#include <dt-bindings/interconnect/qcom,osm-l3.h>
+#include <dt-bindings/interconnect/qcom,sdm845.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc.h>
 #include <dt-bindings/spmi/spmi.h>
 #include <dt-bindings/thermal/thermal_qti.h>
-#include <dt-bindings/msm/msm-bus-ids.h>
 #include <dt-bindings/soc/qcom,dcc_v2.h>
 
 #define MHZ_TO_MBPS(mhz, w) ((mhz * 1000000 * w) / (1024 * 1024))
 #define BW_OPP_ENTRY(mhz, w) opp-mhz {opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;}
+#define BW_OPP_ENTRY_DDR(mhz, w, ddrtype) opp-mhz {\
+				opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;\
+				opp-supported-hw = <ddrtype>;}
 
 / {
 	model = "Qualcomm Technologies, Inc. SDM845";
@@ -67,7 +72,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_0>;
-			sched-energy-costs = <&CPU_COST_0>;
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -103,7 +107,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_100>;
-			sched-energy-costs = <&CPU_COST_0>;
 			L2_100: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -134,7 +137,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_200>;
-			sched-energy-costs = <&CPU_COST_0>;
 			L2_200: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -165,7 +167,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_300>;
-			sched-energy-costs = <&CPU_COST_0>;
 			L2_300: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -196,7 +197,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_400>;
-			sched-energy-costs = <&CPU_COST_1>;
 			L2_400: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -227,7 +227,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_500>;
-			sched-energy-costs = <&CPU_COST_1>;
 			L2_500: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -258,7 +257,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_600>;
-			sched-energy-costs = <&CPU_COST_1>;
 			L2_600: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -289,7 +287,6 @@
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			next-level-cache = <&L2_700>;
-			sched-energy-costs = <&CPU_COST_1>;
 			L2_700: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -325,22 +322,20 @@
 				core3 {
 					cpu = <&CPU3>;
 				};
-			};
 
-			cluster1 {
-				core0 {
+				core4 {
 					cpu = <&CPU4>;
 				};
 
-				core1 {
+				core5 {
 					cpu = <&CPU5>;
 				};
 
-				core2 {
+				core6 {
 					cpu = <&CPU6>;
 				};
 
-				core3 {
+				core7 {
 					cpu = <&CPU7>;
 				};
 			};
@@ -933,8 +928,8 @@
 	cpu_cpu_llcc_bw: qcom,cpu-cpu-llcc-bw {
 		compatible = "qcom,devfreq-icc";
 		governor = "performance";
-		qcom,src-dst-ports =
-			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_LLCC>;
+		interconnects = <&gem_noc MASTER_APPSS_PROC
+				&gem_noc SLAVE_LLCC>;
 		qcom,active-only;
 		operating-points-v2 = <&llcc_bw_opp_table>;
 	};
@@ -951,23 +946,22 @@
 
 	ddr_bw_opp_table: ddr-bw-opp-table {
 		compatible = "operating-points-v2";
-		BW_OPP_ENTRY( 200, 4); /*  762 MB/s */
-		BW_OPP_ENTRY( 300, 4); /* 1144 MB/s */
-		BW_OPP_ENTRY( 451, 4); /* 1720 MB/s */
-		BW_OPP_ENTRY( 547, 4); /* 2086 MB/s */
-		BW_OPP_ENTRY( 681, 4); /* 2597 MB/s */
-		BW_OPP_ENTRY( 768, 4); /* 2929 MB/s */
-		BW_OPP_ENTRY(1017, 4); /* 3879 MB/s */
-		BW_OPP_ENTRY(1296, 4); /* 4943 MB/s */
-		BW_OPP_ENTRY(1555, 4); /* 5931 MB/s */
-		BW_OPP_ENTRY(1804, 4); /* 6881 MB/s */
+		BW_OPP_ENTRY_DDR( 200, 4, 0x80); /*  762 MB/s */
+		BW_OPP_ENTRY_DDR( 300, 4, 0x80); /* 1144 MB/s */
+		BW_OPP_ENTRY_DDR( 451, 4, 0x80); /* 1720 MB/s */
+		BW_OPP_ENTRY_DDR( 547, 4, 0x80); /* 2086 MB/s */
+		BW_OPP_ENTRY_DDR( 681, 4, 0x80); /* 2597 MB/s */
+		BW_OPP_ENTRY_DDR( 768, 4, 0x80); /* 2929 MB/s */
+		BW_OPP_ENTRY_DDR(1017, 4, 0x80); /* 3879 MB/s */
+		BW_OPP_ENTRY_DDR(1296, 4, 0x80); /* 4943 MB/s */
+		BW_OPP_ENTRY_DDR(1555, 4, 0x80); /* 5931 MB/s */
+		BW_OPP_ENTRY_DDR(1804, 4, 0x80); /* 6881 MB/s */
 	};
 
 	cpu_llcc_ddr_bw: qcom,cpu-llcc-ddr-bw {
 		compatible = "qcom,devfreq-icc-ddr";
 		governor = "performance";
-		qcom,src-dst-ports =
-			<MSM_BUS_MASTER_LLCC MSM_BUS_SLAVE_EBI_CH0>;
+		interconnects = <&mem_noc MASTER_LLCC &mem_noc SLAVE_EBI1>;
 		qcom,active-only;
 		operating-points-v2 = <&ddr_bw_opp_table>;
 	};
@@ -1228,7 +1222,6 @@
 		qcom,camcc = <&clock_camcc>;
 		qcom,dispcc = <&clock_dispcc>;
 		qcom,gpucc = <&clock_gpucc>;
-		qcom,cpucc = <&cpucc_debug>;
 		clock-names = "xo_clk_src";
 		clocks = <&clock_rpmh RPMH_CXO_CLK>;
 		#clock-cells = <1>;
@@ -1300,11 +1293,15 @@
 			<0 0>,
 			<0 0>;
 
+		interconnects = <&aggre1_noc MASTER_UFS_MEM &mem_noc SLAVE_EBI1>,
+		      <&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_UFS_MEM_CFG>;
+		interconnect-names = "ufs-ddr", "cpu-ufs";
+
 		non-removable;
-		qcom,msm-bus,name = "ufshc_mem";
-		qcom,msm-bus,num-cases = <22>;
-		qcom,msm-bus,num-paths = <2>;
-		qcom,msm-bus,vectors-KBps =
+		qcom,ufs-bus-bw,name = "ufshc_mem";
+		qcom,ufs-bus-bw,num-cases = <22>;
+		qcom,ufs-bus-bw,num-paths = <2>;
+		qcom,ufs-bus-bw,vectors-KBps =
 		/*
 		 * During HS G3 UFS runs at nominal voltage corner, vote
 		 * higher bandwidth to push other buses in the data path
@@ -1379,6 +1376,10 @@
 
 		qcom,bus-width = <4>;
 		qcom,large-address-bus;
+
+		interconnects = <&aggre2_noc MASTER_SDCC_2 &mem_noc SLAVE_EBI1>,
+			<&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_SDCC_2>;
+		interconnect-names = "sdhc-ddr","cpu-sdhc";
 
 		qcom,msm-bus,name = "sdhc2";
 		qcom,msm-bus,num-cases = <8>;
@@ -1940,12 +1941,8 @@
 		qcom,proxy-clock-names = "core_clk", "iface_clk", "bus_clk";
 
 		qcom,pas-id = <9>;
-		qcom,msm-bus,name = "pil-venus";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<63 512 0 0>,
-			<63 512 0 304000>;
+		interconnect-names = "pil-venus";
+		interconnects = <&mmss_noc MASTER_VIDEO_P0 &mem_noc SLAVE_EBI1>;
 		qcom,proxy-timeout-ms = <100>;
 		qcom,firmware-name = "venus";
 		memory-region = <&pil_video_mem>;
@@ -2170,9 +2167,8 @@
 				<WAKE_TCS      3>,
 				<CONTROL_TCS   1>;
 
-		msm_bus_apps_rsc {
-			compatible = "qcom,msm-bus-rsc";
-			qcom,msm-bus-id = <MSM_BUS_RSC_APPS>;
+		apps_bcm_voter: bcm_voter {
+			compatible = "qcom,bcm-voter";
 		};
 
 		system_pm {
@@ -2198,15 +2194,83 @@
 				<WAKE_TCS    1>,
 				<CONTROL_TCS 1>;
 
-		msm_bus_disp_rsc {
-			compatible = "qcom,msm-bus-rsc";
-			qcom,msm-bus-id = <MSM_BUS_RSC_DISP>;
+		disp_bcm_voter: bcm_voter {
+			compatible = "qcom,bcm-voter";
+			qcom,tcs-wait = <QCOM_ICC_TAG_AMC>;
 		};
+	};
 
-		sde_rsc_rpmh {
-			compatible = "qcom,sde-rsc-rpmh";
-			cell-index = <0>;
-		};
+	osm_l3: interconnect@17d41000 {
+		compatible = "qcom,sdm845-osm-l3";
+		reg = <0 0x17d41000 0 0x1400>;
+		clocks = <&clock_rpmh RPMH_CXO_CLK>, <&clock_gcc GPLL0>;
+		clock-names = "xo", "alternate";
+		#interconnect-cells = <1>;
+	};
+
+	mem_noc: interconnect@1380000 {
+		compatible = "qcom,sdm845-mem-noc";
+		reg = <0 0x01380000 0 0x27200>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voter-names = "apps_rsc", "disp_rsc";
+		qcom,bcm-voters = <&apps_bcm_voter>, <&disp_bcm_voter>;
+	};
+
+	dc_noc: interconnect@14e0000 {
+		compatible = "qcom,sdm845-dc-noc";
+		reg = <0 0x014e0000 0 0x400>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	config_noc: interconnect@1500000 {
+		compatible = "qcom,sdm845-config-noc";
+		reg = <0 0x01500000 0 0x5080>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	system_noc: interconnect@1620000 {
+		compatible = "qcom,sdm845-system-noc";
+		reg = <0 0x01620000 0 0x18080>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	aggre1_noc: interconnect@16e0000 {
+		compatible = "qcom,sdm845-aggre1-noc";
+		reg = <0 0x016e0000 0 0x15080>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	aggre2_noc: interconnect@1700000 {
+		compatible = "qcom,sdm845-aggre2-noc";
+		reg = <0 0x01700000 0 0x1f300>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	compute_noc: interconnect@1710000 {
+		compatible = "qcom,sdm845-compute_noc";
+		#interconnect-cells = <1>;
+		qcom,bcm-voter-names = "hlos";
+		qcom,bcm-voters = <&apps_bcm_voter>;
+	};
+
+	mmss_noc: interconnect@1740000 {
+		compatible = "qcom,sdm845-mmss-noc";
+		reg = <0 0x01740000 0 0x1c100>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voter-names = "apps_rsc", "disp_rsc";
+		qcom,bcm-voters = <&apps_bcm_voter>, <&disp_bcm_voter>;
+	};
+
+	gem_noc: interconnect@17900000 {
+		compatible = "qcom,sdm845-gem-noc";
+		reg = <0 0x17900000 0 0xd080>;
+		#interconnect-cells = <1>;
+		qcom,bcm-voters = <&apps_bcm_voter>;
 	};
 
 	sp_scsr: mailbox@188501c {
@@ -2569,6 +2633,7 @@
 		compatible = "qcom,qseecom";
 		reg = <0x86d00000 0x2200000>;
 		reg-names = "secapp-region";
+		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
 		qcom,hlos-ce-hw-instance = <0>;
 		qcom,qsee-ce-hw-instance = <0>;
@@ -2577,37 +2642,17 @@
 		qcom,no-clock-support;
 		qcom,fde-key-size;
 		qcom,commonlib64-loaded-by-uefi;
-		qcom,msm-bus,name = "qseecom-noc";
-		qcom,msm-bus,num-cases = <4>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<125 512 0 0>,
-			<125 512 200000 400000>,
-			<125 512 300000 800000>,
-			<125 512 400000 1000000>;
-		clock-names = "core_clk_src", "core_clk",
-				"iface_clk", "bus_clk";
-		clocks = <&clock_gcc GCC_CE1_CLK>,
-			 <&clock_gcc GCC_CE1_CLK>,
-			 <&clock_gcc GCC_CE1_AHB_CLK>,
-			 <&clock_gcc GCC_CE1_AXI_CLK>;
-		qcom,ce-opp-freq = <171430000>;
 		qcom,qsee-reentrancy-support = <2>;
 	};
 
 	qcom_rng: qrng@793000 {
 		compatible = "qcom,msm-rng";
 		reg = <0x793000 0x1000>;
-		qcom,msm-rng-iface-clk;
 		qcom,no-qrng-config;
-		qcom,msm-bus,name = "msm-rng-noc";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<1 618 0 0>,    /* No vote */
-			<1 618 0 300000>;  /* 75 MHz */
+		interconnect-names = "data_path";
+		interconnects = <&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_PRNG>;
+		clock-names = "km_clk_src";
 		clocks = <&clock_gcc GCC_PRNG_AHB_CLK>;
-		clock-names = "iface_clk";
 	};
 
 	qcom_tzlog: tz-log@146bf720 {
@@ -2629,12 +2674,8 @@
 		qcom,ce-device = <0>;
 		qcom,ce-hw-shared;
 		qcom,bam-ee = <0>;
-		qcom,msm-bus,name = "qcedev-noc";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-				<125 512 0 0>,
-				<125 512 393600 393600>;
+		interconnect-names = "data_path";
+		interconnects = <&aggre2_noc MASTER_CRYPTO &mem_noc SLAVE_EBI1>;
 		clock-names = "core_clk_src", "core_clk",
 				"iface_clk", "bus_clk";
 		clocks = <&clock_gcc GCC_CE1_CLK>,
@@ -2688,19 +2729,6 @@
 		qcom,bam-ee = <0>;
 		qcom,ce-hw-shared;
 		qcom,clk-mgmt-sus-res;
-		qcom,msm-bus,name = "qcrypto-noc";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
-			<125 512 0 0>,
-			<125 512 393600 393600>;
-		clock-names = "core_clk_src", "core_clk",
-				"iface_clk", "bus_clk";
-		clocks = <&clock_gcc GCC_CE1_CLK>,
-			 <&clock_gcc GCC_CE1_CLK>,
-			 <&clock_gcc GCC_CE1_AHB_CLK>,
-			 <&clock_gcc GCC_CE1_AXI_CLK>;
-		qcom,ce-opp-freq = <171430000>;
 		qcom,request-bw-before-clk;
 		qcom,use-sw-aes-cbc-ecb-ctr-algo;
 		qcom,use-sw-aes-xts-algo;
@@ -2709,6 +2737,8 @@
 		qcom,use-sw-aead-algo;
 		qcom,use-sw-hmac-algo;
 		qcom,smmu-s1-enable;
+		interconnect-names = "data_path";
+		interconnects = <&aggre2_noc MASTER_CRYPTO &mem_noc SLAVE_EBI1>;
 		iommus = <&apps_smmu 0x704 0x1>,
 			 <&apps_smmu 0x714 0x1>;
 		qcom,iommu-dma = "atomic";
@@ -2753,35 +2783,29 @@
 		qcom,use-64-bit-dma-mask;
 		qcom,arm-smmu;
 		qcom,bandwidth-vote-for-ipa;
-		qcom,msm-bus,name = "ipa";
-		qcom,msm-bus,num-cases = <5>;
-		qcom,msm-bus,num-paths = <4>;
-		qcom,msm-bus,vectors-KBps =
+		qcom,max_num_smmu_cb = <3>;
+		qcom,interconnect,num-cases = <5>;
+		qcom,interconnect,num-paths = <4>;
+		interconnects = <&aggre2_noc MASTER_IPA &mem_noc SLAVE_EBI1>,
+			<&aggre2_noc MASTER_IPA &system_noc SLAVE_IMEM>,
+			<&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_IPA_CFG>;
+		interconnect-names = "ipa_to_ebi1", "ipa_to_imem", "appss_to_ipa";
 		/* No vote */
-			<90 512 0 0>,
-			<90 585 0 0>,
-			<1 676 0 0>,
-			<143 777 0 0>,
+		qcom,no-vote =
+		<0 0 0 0 0 0>;
 		/* SVS2 */
-			<90 512 80000 600000>,
-			<90 585 80000 350000>,
-			<1 676 40000 40000>, /*gcc_config_noc_clk_src */
-			<143 777 0 75>, /* IB defined for IPA2X_clk in MHz*/
+		qcom,svs2 =
+		<80000 600000 80000 350000 40000 40000 0 75>;
 		/* SVS */
-			<90 512 80000 640000>,
-			<90 585 80000 640000>,
-			<1 676 80000 80000>,
-			<143 777 0 150>, /* IB defined for IPA2X_clk in MHz*/
+		qcom,svs =
+		<80000 640000 80000 640000 80000 80000 0 150>;
 		/* NOMINAL */
-			<90 512 206000 960000>,
-			<90 585 206000 960000>,
-			<1 676 206000 160000>,
-			<143 777 0 300>, /* IB defined for IPA2X_clk in MHz*/
+		qcom,nominal =
+		<206000 960000 206000 960000 206000 160000 0 300>;
 		/* TURBO */
-			<90 512 206000 3600000>,
-			<90 585 206000 3600000>,
-			<1 676 206000 300000>,
-			<143 777 0 355>; /* IB defined for IPA clk in MHz*/
+		qcom,turbo =
+		<206000 3600000 206000 3600000 206000 300000 0 355>;
+
 		qcom,bus-vector-names =
 			"MIN", "SVS2", "SVS", "NOMINAL", "TURBO";
 		qcom,throughput-threshold = <310 600 1000>;
@@ -4062,10 +4086,10 @@
 		compatible = "qcom,wil6210";
 		qcom,pcie-parent = <&pcie0>;
 		qcom,wigig-en = <&tlmm 39 0>;
-		qcom,msm-bus,name = "wil6210";
-		qcom,msm-bus,num-cases = <2>;
-		qcom,msm-bus,num-paths = <1>;
-		qcom,msm-bus,vectors-KBps =
+		qcom,11ad-bus-bw,name = "wil6210";
+		qcom,11ad-bus-bw,num-cases = <2>;
+		qcom,11ad-bus-bw,num-paths = <1>;
+		qcom,11ad-bus-bw,vectors-KBps =
 			<45 512 0 0>,
 			<45 512 600000 800000>; /* ~4.6Gbps (MCS12) */
 		qcom,use-ext-supply;
@@ -4206,7 +4230,6 @@
 #include "sdm845-ion.dtsi"
 #include "sdm845-smp2p.dtsi"
 #include "sdm845-camera.dtsi"
-#include "sdm845-bus.dtsi"
 #include "sdm845-vidc.dtsi"
 #include "sdm845-pm.dtsi"
 #include "sdm845-pinctrl.dtsi"
