@@ -1400,7 +1400,7 @@ static int gic_dist_supports_lpis(void)
 {
 	return (IS_ENABLED(CONFIG_ARM_GIC_V3_ITS) &&
 		!!(readl_relaxed(gic_data.dist_base + GICD_TYPER) & GICD_TYPER_LPIS) &&
-		!gicv3_nolpi);
+		!gicv3_nolpi && !IS_ENABLED(CONFIG_ARM_GIC_V3_ACL));
 }
 
 static void gic_cpu_init(void)
