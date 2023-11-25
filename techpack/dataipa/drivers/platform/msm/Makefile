@@ -52,6 +52,19 @@ include $(srctree)/techpack/dataipa/config/dataipa_gsi_V1_GKI.conf
 endif
 endif
 
+ifeq ($(CONFIG_ARCH_SDM845), y)
+LINUXINCLUDE    += -include $(srctree)/techpack/dataipa/config/dataipa_legacy.h
+ifeq ($(CONFIG_QGKI),y)
+include $(srctree)/techpack/dataipa/config/dataipa_legacy_QGKI.conf
+ifeq ($(CONFIG_LOCALVERSION), "-qgki-debug")
+include $(srctree)/techpack/dataipa/config/dataipa_debug.conf
+LINUXINCLUDE    += -include $(srctree)/techpack/dataipa/config/dataipa_debug.h
+endif
+else
+include $(srctree)/techpack/dataipa/config/dataipa_legacy_GKI.conf
+endif
+endif
+
 DATAIPADRVTOP = $(srctree)/techpack/dataipa/drivers/platform/msm
 
 ifneq (,$(filter $(CONFIG_IPA3),y m))
