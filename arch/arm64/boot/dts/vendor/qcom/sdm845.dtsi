@@ -2484,6 +2484,9 @@
 
 	spss_utils: qcom,spss_utils {
 		compatible = "qcom,spss-utils";
+		/* Boolean property to differentiate supported features*/
+		qcom,no-cmac-and-iar-feature-support;
+		qcom,no-cmac-support;
 		/* spss fuses physical address */
 		qcom,spss-fuse1-addr = <0x007841c4>;
 		qcom,spss-fuse1-bit = <27>;
