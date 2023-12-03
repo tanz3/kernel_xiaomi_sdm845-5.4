@@ -51,6 +51,7 @@ struct elliptic_system_configuration_parameter {
 		int32_t context;
 		int32_t capture;
 		int32_t input_channels;
+		int32_t re_send;
 	};
 };
 
@@ -667,6 +668,8 @@ int elliptic_calibration_param_put(
 		elliptic_system_configuration_cache.calibration_state =
 			ucontrol->value.integer.value[0];
 
+		EL_PRINT_E("set the CALIBRATION STATE as %d",
+			elliptic_system_configuration_cache.calibration_state);
 		param.type = ESCPT_CALIBRATION_STATE;
 		param.calibration_state =
 			elliptic_system_configuration_cache.calibration_state;
@@ -758,9 +761,7 @@ int elliptic_system_configuration_param_get(
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.engine_suspend;
 		break;
-	case ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE:
-		break;	
-    case ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED:
+	case ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED:
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.input_enabled;
 		break;
@@ -791,7 +792,10 @@ int elliptic_system_configuration_param_get(
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.input_channels;
 		break;
-
+	case ELLIPTIC_SYSTEM_CONFIGURATION_RE_SEND:
+		ucontrol->value.integer.value[0] =
+			elliptic_system_configuration_cache.re_send;
+		break;
 	default:
 		EL_PRINT_E("Invalid mixer control");
 		return -EINVAL;
@@ -809,7 +813,9 @@ int elliptic_system_configuration_param_put(
 	struct soc_mixer_control *mc =
 		(struct soc_mixer_control *)kcontrol->private_value;
 	struct elliptic_system_configuration_parameter param;
-	struct timeval tv;
+
+	pr_err("%s: reg: %d shift: %d val: %d\n", __func__, mc->reg, mc->shift, 
+		ucontrol->value.integer.value[0]);
 
 	if (mc->reg != ELLIPTIC_SYSTEM_CONFIGURATION)
 		return -EINVAL;
@@ -914,23 +920,12 @@ int elliptic_system_configuration_param_put(
 		param.engine_suspend =
 		elliptic_system_configuration_cache.engine_suspend;
 		break;
-	case ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE:
-		break;
 	case ELLIPTIC_SYSTEM_CONFIGURATION_EXTERNAL_EVENT:
 		elliptic_system_configuration_cache.external_event =
 			ucontrol->value.integer.value[0];
 		param.type = ESCPT_EXTERNAL_EVENT;
 		param.external_event =
 		elliptic_system_configuration_cache.external_event;
-		break;
-	case ELLIPTIC_SYSTEM_CONFIGURATION_CALIBRATION_METHOD:
-		elliptic_system_configuration_cache.calibration_method =
-			ucontrol->value.integer.value[0];
-		param.type = ESCPT_CALIBRATION_METHOD;
-		param.calibration_method =
-		elliptic_system_configuration_cache.calibration_method;
-		do_gettimeofday(&tv);
-		param.calibration_timestamp = (int32_t)tv.tv_sec;
 		break;
 	case ELLIPTIC_SYSTEM_CONFIGURATION_DEBUG_MODE:
 		elliptic_system_configuration_cache.debug_mode =
@@ -960,7 +955,13 @@ int elliptic_system_configuration_param_put(
 		param.context =
 		elliptic_system_configuration_cache.input_channels;
 		break;
-
+	case ELLIPTIC_SYSTEM_CONFIGURATION_RE_SEND:
+		elliptic_system_configuration_cache.re_send =
+			ucontrol->value.integer.value[0];
+		param.type = ESCPT_RE_SEND;
+		param.re_send =
+			elliptic_system_configuration_cache.re_send;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1215,14 +1216,7 @@ static const struct snd_kcontrol_new ultrasound_filter_mixer_controls[] = {
 	0,
 	elliptic_system_configuration_param_get,
 	elliptic_system_configuration_param_put),
-	SOC_SINGLE_EXT("Ultrasound ReportNone",
-	ELLIPTIC_SYSTEM_CONFIGURATION,
-	ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE,
-	1,
-	0,
-	elliptic_system_configuration_param_get,
-	elliptic_system_configuration_param_put),	
-    SOC_SINGLE_EXT("Ultrasound Input",
+	SOC_SINGLE_EXT("Ultrasound Input",
 	ELLIPTIC_SYSTEM_CONFIGURATION,
 	ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_ENABLED,
 	1,
@@ -1290,7 +1284,14 @@ static const struct snd_kcontrol_new ultrasound_filter_mixer_controls[] = {
 	0,
 	elliptic_system_configuration_param_get,
 	elliptic_system_configuration_param_put),
-
+    
+	SOC_SINGLE_EXT("Ultrasound RE SEND",
+	ELLIPTIC_SYSTEM_CONFIGURATION,
+	ELLIPTIC_SYSTEM_CONFIGURATION_RE_SEND,
+	1,
+	0,
+	elliptic_system_configuration_param_get,
+	elliptic_system_configuration_param_put),
 };
 
 
