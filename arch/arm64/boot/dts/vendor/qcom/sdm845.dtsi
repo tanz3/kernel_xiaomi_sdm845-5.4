@@ -1295,11 +1295,6 @@
 		"HS_RB_G1_L2", "HS_RB_G2_L2", "HS_RB_G3_L2",
 		"MAX";
 
-		/* PM QoS */
-		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cpu-group-latency-us = <70 70>;
-		qcom,pm-qos-default-cpu = <0>;
-
 		pinctrl-names = "dev-reset-assert", "dev-reset-deassert";
 		pinctrl-0 = <&ufs_dev_reset_assert>;
 		pinctrl-1 = <&ufs_dev_reset_deassert>;
@@ -1308,6 +1303,15 @@
 		reset-names = "core_reset";
 
 		status = "disabled";
+		qos0 {
+			mask = <0xf0>;
+			vote = <44>;
+		};
+
+		qos1 {
+			mask = <0x0f>;
+			vote = <44>;
+		};
 	};
 
 	sdhc_2: sdhci@8804000 {
