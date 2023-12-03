@@ -35,6 +35,7 @@ struct elliptic_device {
 	int opened;
 	struct cdev cdev;
 	struct semaphore sem;
+	struct device *device;
 	struct elliptic_data el_data;
 };
 

@@ -13,14 +13,33 @@
 #define ELLIPTIC_CALIBRATION_MAX_DISPLAY_COUNT  96
 #define ELLIPTIC_ML_DISPLAY_COUNT 16
 
+#define elliptic_attr(_name) \
+static struct kobj_attribute _name##_attr = {	\
+	.attr	= {				\
+		.name = __stringify(_name),	\
+		.mode = 0644,			\
+	},					\
+	.show	= _name##_show,			\
+	.store	= _name##_store,		\
+}
+
+#define elliptic_attr_ro(_name) \
+static struct kobj_attribute _name##_attr = {	\
+	.attr	= {				\
+		.name = __stringify(_name),	\
+		.mode = S_IRUGO,		\
+	},					\
+	.show	= _name##_show,			\
+}
+
 static int kobject_create_and_add_failed;
 static int sysfs_create_group_failed;
 
 extern struct elliptic_system_configuration_parameters_cache
 	elliptic_system_configuration_cache;
 
-static ssize_t calibration_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count) {
+static ssize_t calibration_store(struct kobject *dev,
+	struct kobj_attribute *attr, const char *buf, size_t count) {
 
 	ssize_t result;
 
@@ -42,8 +61,8 @@ static ssize_t calibration_store(struct device *dev,
 	return result;
 }
 
-static ssize_t calibration_v2_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count) {
+static ssize_t calibration_v2_store(struct kobject *dev,
+	struct kobj_attribute *attr, const char *buf, size_t count) {
 
 	ssize_t result;
 
@@ -65,8 +84,8 @@ static ssize_t calibration_v2_store(struct device *dev,
 	return result;
 }
 
-static ssize_t diagnostics_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count) {
+static ssize_t diagnostics_store(struct kobject *dev,
+	struct kobj_attribute *attr, const char *buf, size_t count) {
 
 	ssize_t result;
 
@@ -88,8 +107,8 @@ static ssize_t diagnostics_store(struct device *dev,
 	return result;
 }
 
-static ssize_t ml_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count) {
+static ssize_t ml_store(struct kobject *dev,
+	struct kobj_attribute *attr, const char *buf, size_t count) {
 
 	ssize_t result;
 
@@ -111,11 +130,11 @@ static ssize_t ml_store(struct device *dev,
 	return result;
 }
 
-static ssize_t calibration_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t calibration_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint8_t *caldata;
 
@@ -162,17 +181,17 @@ static ssize_t calibration_show_core(struct device *dev,
 	return result;
 }
 
-static ssize_t calibration_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t calibration_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return calibration_show_core(dev, attr, buf, 0);
 }
 
-static ssize_t calibration_v2_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t calibration_v2_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint8_t *caldata;
 
@@ -229,17 +248,17 @@ static ssize_t calibration_v2_show_core(struct device *dev,
 	return result;
 }
 
-static ssize_t calibration_v2_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t calibration_v2_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return calibration_v2_show_core(dev, attr, buf, 0);
 }
 
-static ssize_t diagnostics_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t diagnostics_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	uint32_t *data32;
 	int i;
 
@@ -281,17 +300,17 @@ static ssize_t diagnostics_show_core(struct device *dev,
 	return result;
 }
 
-static ssize_t diagnostics_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t diagnostics_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return diagnostics_show_core(dev, attr, buf, 0);
 }
 
-static ssize_t ml_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t ml_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint32_t *mldata;
 
@@ -343,15 +362,15 @@ static ssize_t ml_show_core(struct device *dev,
 	return result;
 }
 
-static ssize_t ml_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t ml_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return ml_show_core(dev, attr, buf, 0);
 }
 
 
-static ssize_t version_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t version_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
 	struct elliptic_engine_version_info *version_info;
@@ -397,17 +416,17 @@ static ssize_t version_show_core(struct device *dev,
 	return result;
 }
 
-static ssize_t version_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t version_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return version_show_core(dev, attr, buf, 0);
 }
 
 
-static ssize_t branch_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t branch_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
-	int length;
+	int length = 0;
 
 	struct elliptic_shared_data_block *branch_obj =
 		elliptic_get_shared_obj(ELLIPTIC_OBJ_ID_BRANCH_INFO);
@@ -432,16 +451,16 @@ static ssize_t branch_show_core(struct device *dev,
 	return (ssize_t)length;
 }
 
-static ssize_t branch_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t branch_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return branch_show_core(dev, attr, buf, 0);
 }
 
-static ssize_t tag_show_core(struct device *dev,
-	struct device_attribute *attr, char *buf, int pretty)
+static ssize_t tag_show_core(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf, int pretty)
 {
-	int length;
+	int length = 0;
 
 	struct elliptic_shared_data_block *tag_obj =
 		elliptic_get_shared_obj(ELLIPTIC_OBJ_ID_TAG_INFO);
@@ -466,8 +485,8 @@ static ssize_t tag_show_core(struct device *dev,
 	return (ssize_t)length;
 }
 
-static ssize_t tag_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t tag_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	return tag_show_core(dev, attr, buf, 0);
 }
@@ -477,7 +496,7 @@ static ssize_t cache_show(char *buf, int pretty)
 	struct elliptic_system_configuration_parameters_cache *cache =
 				&elliptic_system_configuration_cache;
 
-	int length;
+	int length = 0;
 
 	length = snprintf(buf, PAGE_SIZE - 1, "Cache:\n");
 	length += snprintf(buf + length, PAGE_SIZE - 1, "    mi:%d\n",
@@ -500,10 +519,10 @@ static ssize_t cache_show(char *buf, int pretty)
 	return (ssize_t)length;
 }
 
-static ssize_t opmode_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t opmode_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
-	int length;
+	int length = 0;
 	ssize_t result;
 
 	struct elliptic_system_configuration_parameters_cache *cache =
@@ -515,10 +534,10 @@ static ssize_t opmode_show(struct device *dev,
 	return result;
 }
 
-static ssize_t opmode_flags_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t opmode_flags_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
-	int length;
+	int length = 0;
 	ssize_t result;
 	struct elliptic_system_configuration_parameters_cache *cache =
 				&elliptic_system_configuration_cache;
@@ -531,7 +550,7 @@ static ssize_t opmode_flags_show(struct device *dev,
 
 static ssize_t driver_version_show(char *buf)
 {
-	int length;
+	int length = 0;
 
 	length = snprintf(buf, PAGE_SIZE, "Driver version: %s-%s (%s)\n",
 				build_name, build_number, build_source_version);
@@ -539,8 +558,8 @@ static ssize_t driver_version_show(char *buf)
 	return (ssize_t)length;
 }
 
-static ssize_t state_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
+static ssize_t state_show(struct kobject *dev,
+	struct kobj_attribute *attr, char *buf)
 {
 	int length = 0;
 
@@ -572,16 +591,16 @@ static ssize_t state_show(struct device *dev,
 	return (ssize_t)length;
 }
 
-static struct device_attribute calibration_attr = __ATTR_RW(calibration);
-static struct device_attribute version_attr = __ATTR_RO(version);
-static struct device_attribute branch_attr = __ATTR_RO(branch);
-static struct device_attribute calibration_v2_attr = __ATTR_RW(calibration_v2);
-static struct device_attribute diagnostics_attr = __ATTR_RW(diagnostics);
-static struct device_attribute state_attr = __ATTR_RO(state);
-static struct device_attribute tag_attr = __ATTR_RO(tag);
-static struct device_attribute ml_attr = __ATTR_RW(ml);
-static struct device_attribute opmode_attr = __ATTR_RO(opmode);
-static struct device_attribute opmode_flags_attr = __ATTR_RO(opmode_flags);
+elliptic_attr(calibration);
+elliptic_attr(calibration_v2);
+elliptic_attr(diagnostics);
+elliptic_attr(ml);
+elliptic_attr_ro(version);
+elliptic_attr_ro(branch);
+elliptic_attr_ro(state);
+elliptic_attr_ro(tag);
+elliptic_attr_ro(opmode);
+elliptic_attr_ro(opmode_flags);
 
 static struct attribute *elliptic_attrs[] = {
 	&calibration_attr.attr,

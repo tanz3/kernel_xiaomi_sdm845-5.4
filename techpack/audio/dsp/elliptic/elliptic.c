@@ -2,7 +2,6 @@
 * Copyright Elliptic Labs
 *
 */
-/* #define DEBUG */
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -132,6 +131,8 @@ int elliptic_notify_gain_change_msg(int component_id, int gaindb)
 		(const char *)msg, sizeof(msg));
 }
 
+static int major;
+
 /* inode refers to the actual file on disk */
 static int device_open(struct inode *inode, struct file *filp)
 {
@@ -139,6 +140,7 @@ static int device_open(struct inode *inode, struct file *filp)
 	unsigned int minor;
 	struct elliptic_device *dev;
 	struct elliptic_data *elliptic_data;
+	unsigned long flags;
 
 	major = imajor(inode);
 	minor = iminor(inode);
@@ -165,9 +167,10 @@ static int device_open(struct inode *inode, struct file *filp)
 	}
 
 	elliptic_data = &dev->el_data;
-	spin_lock(&elliptic_data->fifo_isr_spinlock);
+	spin_lock_irqsave(&elliptic_data->fifo_isr_spinlock, flags);
 	elliptic_data_flush_isr_fifo(elliptic_data);
-	spin_unlock(&elliptic_data->fifo_isr_spinlock);
+	spin_unlock_irqrestore(&elliptic_data->fifo_isr_spinlock, flags);
+
 
 	atomic_set(&elliptic_data->abort_io, 0);
 	elliptic_data_reset_debug_counters(elliptic_data);
@@ -700,10 +703,16 @@ int __init elliptic_driver_init(void)
 	int err;
 	int i;
 	int devices_to_destroy;
-	dev_t device_number;
+	dev_t device_number = MKDEV(major, 0);
 
-	err = alloc_chrdev_region(&device_number, 0, ELLIPTIC_NUM_DEVICES,
-		ELLIPTIC_DEVICENAME);
+	if (major) {
+		err = register_chrdev_region(device_number, ELLIPTIC_NUM_DEVICES,
+			ELLIPTIC_DEVICENAME);
+	} else {
+		err = alloc_chrdev_region(&device_number, 0, ELLIPTIC_NUM_DEVICES,
+			ELLIPTIC_DEVICENAME);
+		major = MAJOR(device_number);
+	}
 
 	devices_to_destroy = 0;
 
@@ -720,17 +729,13 @@ int __init elliptic_driver_init(void)
 		goto fail;
 	}
 
-	err = elliptic_initialize_sysfs();
-
-	if (err)
-		goto fail;
-
 	elliptic_devices = (struct elliptic_device *)
 		kzalloc(sizeof(struct elliptic_device) * ELLIPTIC_NUM_DEVICES,
 			GFP_KERNEL);
 
 	if (elliptic_devices == NULL) {
 		err = -ENOMEM;
+		EL_PRINT_E("elliptic_devices creation failed");
 		goto fail;
 	}
 
@@ -739,14 +744,19 @@ int __init elliptic_driver_init(void)
 		if (elliptic_device_initialize(&elliptic_devices[i], i,
 			elliptic_class)) {
 			devices_to_destroy = i;
+			EL_PRINT_E("elliptic device initialize failed %d", i);
 			goto fail;
 		}
 
 		if (elliptic_data_initialize(&elliptic_devices[i].el_data,
 			ELLIPTIC_DATA_FIFO_SIZE, ELLIPTIC_WAKEUP_TIMEOUT, i)) {
+			EL_PRINT_E("elliptic data initialize failed failed %d", i);
 			goto fail;
 		}
 	}
+
+	if (elliptic_initialize_sysfs())
+		goto fail;
 
 	if (elliptic_data_io_initialize())
 		goto fail;
@@ -758,11 +768,10 @@ int __init elliptic_driver_init(void)
 	if (elliptic_userspace_ctrl_driver_init())
 		goto fail;
 
-        wake_source = wakeup_source_register(NULL, "elliptic_wake_source");
-
-	if (!wake_source) {
-		EL_PRINT_E("failed to allocate wake source");
-		return -ENOMEM;
+	wake_source = wakeup_source_register(NULL, "elliptic_wake_source");
+	if (wake_source == NULL) {
+		EL_PRINT_E("wake_source register failed");
+		goto fail;
 	}
 
 #ifdef ELLIPTIC_LOAD_CALIBRATION_DATA_FROM_FILESYSTEM
@@ -773,6 +782,8 @@ int __init elliptic_driver_init(void)
 			elliptic_send_calibration_to_engine(calib_data_size);
 	}
 #endif
+	EL_PRINT_I("elliptic_class creation name %s", elliptic_class->name);
+
 	return 0;
 
 fail:
@@ -780,11 +791,10 @@ fail:
 	return err;
 }
 
+
 void elliptic_driver_exit(void)
 {
-	if (wake_source) {
-		wakeup_source_unregister(wake_source);
-	}
+	wakeup_source_unregister(wake_source);
 
 	elliptic_cleanup_sysfs();
 	elliptic_driver_cleanup(ELLIPTIC_NUM_DEVICES);

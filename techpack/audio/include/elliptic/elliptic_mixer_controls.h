@@ -82,7 +82,7 @@
 #define ELLIPTIC_SYSTEM_CONFIGURATION_CAPTURE 31
 #define ELLIPTIC_SYSTEM_CONFIGURATION_INPUT_CHANNELS 32
 #define ELLIPTIC_SYSTEM_CONFIGURATION_REPORT_NONE 33
-
+#define ELLIPTIC_SYSTEM_CONFIGURATION_RE_SEND  34
 #define ELLIPTIC_SYSTEM_CONFIGURATION_MAX_CONTEXT_VALUE 0x7FFFFFFF
 
 
@@ -102,7 +102,7 @@ struct elliptic_shared_data_block {
 struct elliptic_shared_data_block *elliptic_get_shared_obj(uint32_t
 	object_id);
 
-extern unsigned int elliptic_add_component_controls(void *component);
+extern unsigned int elliptic_add_component_controls(void *platform);
 
 void elliptic_set_calibration_data(uint8_t *calib_data, size_t size);
 
@@ -120,8 +120,7 @@ enum elliptic_system_configuration_parameter_type {
 	ESCPT_CALIBRATION_PROFILE,
 	ESCPT_ULTRASOUND_GAIN,
 	ESCPT_LOG_LEVEL,
-	ESCPT_BUILD_BRANCH, //13
-	
+	ESCPT_BUILD_BRANCH,
 	ESCPT_FSELECTION,
 	ESCPT_ENGINE_DIAGNOSTICS,
 	ESCPT_ENGINE_CUSTOM_SETTING_0,
@@ -151,6 +150,7 @@ enum elliptic_system_configuration_parameter_type {
 	ESCPT_CONTEXT,
 	ESCPT_CAPTURE,
 	ESCPT_INPUT_CHANNELS,
+	ESCPT_RE_SEND=255,
 };
 
 struct elliptic_system_configuration_parameters_cache {
@@ -177,6 +177,7 @@ struct elliptic_system_configuration_parameters_cache {
 	int32_t context;
 	int32_t capture;
 	int32_t input_channels;
+	int32_t re_send;
 };
 
 
