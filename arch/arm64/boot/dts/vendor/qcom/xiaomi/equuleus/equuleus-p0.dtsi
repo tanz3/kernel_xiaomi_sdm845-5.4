@@ -347,7 +347,7 @@
 &pm8998_vadc {
 	laser_therm0 {
 		label = "laser_therm0";
-		reg = <ADC_AMUX_THM2_PU2>;
+		reg = <ADC5_AMUX_THM2_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -358,7 +358,7 @@
 &pm8998_adc_tm {
 	laser_therm0 {
 		label = "laser_therm0";
-		reg = <ADC_AMUX_THM2_PU2>;
+		reg = <ADC5_AMUX_THM2_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -371,7 +371,7 @@
 	laser_therm0 {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_AMUX_THM2_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_AMUX_THM2_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
