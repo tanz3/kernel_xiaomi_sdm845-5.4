@@ -102,6 +102,8 @@ static void dsi_dce_prepare_pps_header(char *buf, u32 pps_delay_ms)
 	*bp++ = 128;
 }
 
+static int max_lum;
+
 static int dsi_dsc_create_pps_buf_cmd(struct msm_display_dsc_info *dsc,
 	char *buf, int pps_id, u32 size)
 {
@@ -6389,7 +6391,7 @@ error:
 ssize_t dsi_panel_disp_count_get(struct dsi_display *display, char *buf)
 {
 	int ret = -1;
-	struct timespec64 now_boot;
+	ktime_t boot_time;
 	u64 record_end = 0;
 	/* struct timespec rtctime; */
 	struct dsi_panel *panel = NULL;
@@ -6405,7 +6407,8 @@ ssize_t dsi_panel_disp_count_get(struct dsi_display *display, char *buf)
 	}
 
 	panel = display->panel;
-	get_monotonic_boottime64(&now_boot);
+	boot_time = ktime_get_boottime();
+	do_div(boot_time, NSEC_PER_SEC);
 	/* getnstimeofday(&rtctime); */
 
 	ret = scnprintf(buf, PAGE_SIZE,
@@ -6424,7 +6427,7 @@ ssize_t dsi_panel_disp_count_get(struct dsi_display *display, char *buf)
 		"record_end=%llu\n",
 		panel->panel_active,
 		panel->kickoff_count,
-		panel->boottime + now_boot.tv_sec,
+		panel->boottime + boot_time,
 		panel->bootRTCtime,
 		panel->bootdays,
 		panel->bl_duration,

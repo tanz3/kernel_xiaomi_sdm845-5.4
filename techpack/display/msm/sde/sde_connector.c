@@ -123,7 +123,7 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	if (brightness > c_conn->thermal_max_brightness)
 		brightness = c_conn->thermal_max_brightness;
 
-	if (!display->panel->bl_config.bl_remap_flag) {
+	if (!dsi_display->panel->bl_config.bl_remap_flag) {
 		/* map UI brightness into driver backlight level with rounding */
 		bl_lvl = mult_frac(brightness, display->panel->bl_config.bl_max_level,
 				display->panel->bl_config.brightness_max_level);
@@ -134,9 +134,8 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	if (!bl_lvl && brightness)
 		bl_lvl = 1;
 
-	if (bl_lvl && bl_lvl < display->panel->bl_config.bl_min_level
-		&& !display->panel->bl_config.bl_remap_flag)
-		bl_lvl = display->panel->bl_config.bl_min_level;
+	if (bl_lvl && bl_lvl < dsi_display->panel->bl_config.bl_min_level && !dsi_display->panel->bl_config.bl_remap_flag)
+		bl_lvl = dsi_display->panel->bl_config.bl_min_level;
 
 	if (!c_conn->allow_bl_update) {
 		c_conn->unset_bl_level = bl_lvl;
