@@ -5734,8 +5734,8 @@ static int dwc3_msm_gadget_vbus_draw(struct dwc3_msm *mdwc, unsigned int mA)
 
 	/* Do not set current multiple times */
 	if (mdwc->max_power == mA
-			|| (psy_type == POWER_SUPPLY_TYPE_USB_CDP)
-				&& (mA != ENUMERATE_MA)))
+			|| (chg_type == POWER_SUPPLY_TYPE_USB_CDP)
+				&& (mA != ENUMERATE_MA))
 		return 0;
 
 	/*
