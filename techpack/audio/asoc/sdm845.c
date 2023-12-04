@@ -5745,8 +5745,6 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 	{
 		.name = "Quaternary MI2S_RX Hostless Playback",
 		.stream_name = "Quaternary MI2S_RX Hostless Playback",
-		.cpu_dai_name = "QUAT_MI2S_RX_HOSTLESS",
-		.platform_name = "msm-pcm-hostless",
 		.dynamic = 1,
 		.dpcm_playback = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
@@ -5754,14 +5752,11 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-		.codec_dai_name = "snd-soc-dummy-dai",
-		.codec_name = "snd-soc-dummy",
+		SND_SOC_DAILINK_REG(quat_mi2s_rx),
 	},
 	{
 		.name = "Quaternary MI2S_TX Hostless Capture",
 		.stream_name = "Quaternary MI2S_TX Hostless Capture",
-		.cpu_dai_name = "QUAT_MI2S_TX_HOSTLESS",
-		.platform_name = "msm-pcm-hostless",
 		.dynamic = 1,
 		.dpcm_capture = 1,
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
@@ -5769,8 +5764,7 @@ static struct snd_soc_dai_link msm_common_dai_links[] = {
 		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-		.codec_dai_name = "snd-soc-dummy-dai",
-		.codec_name = "snd-soc-dummy",
+		SND_SOC_DAILINK_REG(quat_mi2s_tx2),
 	},
 };
 
@@ -6472,10 +6466,6 @@ static struct snd_soc_dai_link msm_quat_mi2s_tas2559_dai_links[] = {
 	{
 		.name = LPASS_BE_QUAT_MI2S_RX,
 		.stream_name = "Quaternary MI2S Playback",
-		.cpu_dai_name = "msm-dai-q6-mi2s.3",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "tas2559.2-004c",
-		.codec_dai_name = "tas2559 ASI1",
 		.no_pcm = 1,
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_CBS_CFS,
 		.dpcm_playback = 1,
@@ -6484,6 +6474,7 @@ static struct snd_soc_dai_link msm_quat_mi2s_tas2559_dai_links[] = {
 		.ops = &msm_mi2s_be_ops,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
+		SND_SOC_DAILINK_REG(tas2559_rx),
 	},
 };
 
@@ -6491,10 +6482,6 @@ static struct snd_soc_dai_link msm_quat_mi2s_tas2557_dai_links[] = {
 	{
 		.name = LPASS_BE_QUAT_MI2S_RX,
 		.stream_name = "Quaternary MI2S Playback",
-		.cpu_dai_name = "msm-dai-q6-mi2s.3",
-		.platform_name = "msm-pcm-routing",
-		.codec_name = "tas2557.2-004c",
-		.codec_dai_name = "tas2557 ASI1",
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.id = MSM_BACKEND_DAI_QUATERNARY_MI2S_RX,
@@ -6502,6 +6489,7 @@ static struct snd_soc_dai_link msm_quat_mi2s_tas2557_dai_links[] = {
 		.ops = &msm_mi2s_be_ops,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
+		SND_SOC_DAILINK_REG(tas2557_rx),
 	},
 };
 

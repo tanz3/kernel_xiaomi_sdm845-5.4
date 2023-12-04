@@ -38,7 +38,7 @@
 #include <linux/uaccess.h>
 #include <linux/crc8.h>
 #include <linux/fs.h>
-#include <asm/segment.h>
+/*#include <asm/segment.h>*/
 
 #include "tas2557.h"
 #include "tas2557-core.h"
