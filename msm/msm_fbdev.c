@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  */
@@ -70,6 +70,12 @@ static int msm_fbdev_create(struct drm_fb_helper *helper,
 	uint64_t paddr;
 	uint32_t format;
 	int ret, pitch;
+	u32 width = 2560, height = 1440;
+
+	sizes->surface_width   = (sizes->surface_width > width) ? width : sizes->surface_width;
+	sizes->surface_height  = (sizes->surface_height > height) ? height : sizes->surface_height;
+	sizes->fb_width   = (sizes->fb_width > width) ? width : sizes->fb_width;
+	sizes->fb_height  = (sizes->fb_height > height) ? height : sizes->fb_height;
 
 	format = drm_mode_legacy_fb_format(sizes->surface_bpp, sizes->surface_depth);
 
