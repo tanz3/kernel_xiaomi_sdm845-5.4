@@ -2,11 +2,7 @@
 dtstree	:= $(srctree)/$(src)
 vendor  := $(dtstree)/vendor
 ifneq "$(wildcard $(vendor)/Makefile)" ""
-    ifeq ($(CONFIG_ARCH_SDM845),y)
-        subdir-y += qcom-legacy
-    else
-        subdir-y += vendor
-    endif
+    subdir-y += vendor
 else
 subdir-y += actions
 subdir-y += al
