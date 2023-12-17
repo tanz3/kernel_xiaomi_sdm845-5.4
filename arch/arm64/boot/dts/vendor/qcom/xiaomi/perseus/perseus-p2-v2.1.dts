@@ -14,7 +14,7 @@
 /dts-v1/;
 
 #include "../../sdm845-v2.1.dtsi"
-#include "../../sdm845-sde-display.dtsi"
+#include "../../display/sdm845-sde-display.dtsi"
 #include "perseus-p2-pinctrl.dtsi"
 #include "perseus-p2.dtsi"
 #include "perseus-audio-overlay.dtsi"

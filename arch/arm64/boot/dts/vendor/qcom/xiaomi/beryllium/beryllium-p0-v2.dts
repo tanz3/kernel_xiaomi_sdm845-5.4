@@ -15,7 +15,7 @@
 /dts-v1/;
 
 #include "../../sdm845-v2.dtsi"
-#include "../../sdm845-sde-display.dtsi"
+#include "../../display/sdm845-sde-display.dtsi"
 #include "beryllium-p0-pinctrl.dtsi"
 #include "beryllium-p0.dtsi"
 #include "beryllium-audio-overlay.dtsi"

@@ -15,7 +15,7 @@
 /dts-v1/;
 
 #include "../../sdm845-v2.dtsi"
-#include "../../sdm845-sde-display.dtsi"
+#include "../../display/sdm845-sde-display.dtsi"
 #include "polaris-p1-pinctrl.dtsi"
 #include "polaris-p1.dtsi"
 #include "polaris-audio-overlay.dtsi"

@@ -14,7 +14,7 @@
 /dts-v1/;
 
 #include "../../sdm845-v2.1.dtsi"
-#include "../../sdm845-sde-display.dtsi"
+#include "../../display/sdm845-sde-display.dtsi"
 #include "equuleus-p1-pinctrl.dtsi"
 #include "equuleus-p1.dtsi"
 #include "../ursa/ursa-audio-overlay.dtsi"

@@ -11,19 +11,19 @@
  * GNU General Public License for more details.
  */
 
-#include "../sdm845-sde-display.dtsi"
-#include "../../display/dsi-panel-jdi-fhd-r63452-cmd.dtsi"
-#include "../../display/dsi-panel-ss-fhd-ea8074-cmd.dtsi"
-#include "../../display/dsi-panel-ss-notch-fhd-ea8074-cmd.dtsi"
-#include "../../display/dsi-panel-jdi-fhd-nt35596s-video.dtsi"
-#include "../../display/dsi-panel-gvo-fhd-rm69299-cmd.dtsi"
-#include "../../display/dsi-panel-tianma-fhd-rm69299-cmd.dtsi"
-#include "../../display/dsi-panel-tianma-fhd-nt36672a-video.dtsi"
-#include "../../display/dsi-panel-ebbg-fhd-ft8716-video.dtsi"
-#include "../../display/dsi-panel-ebbg-fhd-ft8719-video.dtsi"
-#include "../../display/dsi-panel-samsung-fhd-ea8076-cmd.dtsi"
-#include "../../display/dsi-panel-visionox-fhd-r66455-cmd.dtsi"
-#include "../../display/dsi-panel-visionox-fhd-r66455-vid.dtsi"
+#include "../display/sdm845-sde-display.dtsi"
+#include "../display/dsi-panel-jdi-fhd-r63452-cmd.dtsi"
+#include "../display/dsi-panel-ss-fhd-ea8074-cmd.dtsi"
+#include "../display/dsi-panel-ss-notch-fhd-ea8074-cmd.dtsi"
+#include "../display/dsi-panel-jdi-fhd-nt35596s-video.dtsi"
+#include "../display/dsi-panel-gvo-fhd-rm69299-cmd.dtsi"
+#include "../display/dsi-panel-tianma-fhd-rm69299-cmd.dtsi"
+#include "../display/dsi-panel-tianma-fhd-nt36672a-video.dtsi"
+#include "../display/dsi-panel-ebbg-fhd-ft8716-video.dtsi"
+#include "../display/dsi-panel-ebbg-fhd-ft8719-video.dtsi"
+#include "../display/dsi-panel-samsung-fhd-ea8076-cmd.dtsi"
+#include "../display/dsi-panel-visionox-fhd-r66455-cmd.dtsi"
+#include "../display/dsi-panel-visionox-fhd-r66455-vid.dtsi"
 
 &soc {
 	dsi_amoled_panel_pwr_supply: dsi_amoled_panel_pwr_supply {

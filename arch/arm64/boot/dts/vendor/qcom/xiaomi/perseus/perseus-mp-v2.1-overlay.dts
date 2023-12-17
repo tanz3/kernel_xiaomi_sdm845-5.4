@@ -21,7 +21,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
 
-#include "../../sdm845-sde-display.dtsi"
+#include "../../display/sdm845-sde-display.dtsi"
 #include "perseus-mp-pinctrl.dtsi"
 #include "perseus-mp.dtsi"
 #include "perseus-audio-overlay.dtsi"
