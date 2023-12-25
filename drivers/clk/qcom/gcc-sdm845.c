@@ -102,7 +102,7 @@ static const struct parent_map gcc_parent_map_0[] = {
 };
 
 static const struct clk_parent_data gcc_parent_data_0[] = {
-	{ .fw_name = "bi_tcxo", .name = "bi_tcxo" },
+	{ .fw_name = "bi_tcxo", .name = "bi_tcxo", },
 	{ .hw = &gpll0.clkr.hw },
 	{ .hw = &gpll0_out_even.clkr.hw },
 	{ .fw_name = "core_bi_pll_test_se", .name = "core_bi_pll_test_se" },
@@ -117,7 +117,7 @@ static const struct parent_map gcc_parent_map_1[] = {
 };
 
 static const struct clk_parent_data gcc_parent_data_1[] = {
-	{ .fw_name = "bi_tcxo", .name = "bi_tcxo" },
+	{ .fw_name = "bi_tcxo", .name = "bi_tcxo", },
 	{ .hw = &gpll0.clkr.hw },
 	{ .fw_name = "sleep_clk", .name = "core_pi_sleep_clk" },
 	{ .hw = &gpll0_out_even.clkr.hw },
@@ -169,7 +169,7 @@ static const struct parent_map gcc_parent_map_6[] = {
 static const struct clk_parent_data gcc_parent_data_6[] = {
 	{ .fw_name = "bi_tcxo", .name = "bi_tcxo" },
 	{ .hw = &gpll0.clkr.hw },
-	{ .fw_name = "aud_ref_clk", .name = "aud_ref_clk" },
+	{ .fw_name = "aud_ref_clk" },
 	{ .hw = &gpll0_out_even.clkr.hw },
 	{ .fw_name = "core_bi_pll_test_se", .name = "core_bi_pll_test_se" },
 };
@@ -1142,22 +1142,6 @@ static struct clk_branch gcc_boot_rom_ahb_clk = {
 	},
 };
 
-static struct clk_branch gcc_camera_ahb_clk = {
-	.halt_reg = 0xb008,
-	.halt_check = BRANCH_HALT,
-	.hwcg_reg = 0xb008,
-	.hwcg_bit = 1,
-	.clkr = {
-		.enable_reg = 0xb008,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_camera_ahb_clk",
-			.flags = CLK_IS_CRITICAL,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
 static struct clk_branch gcc_camera_axi_clk = {
 	.halt_reg = 0xb020,
 	.halt_check = BRANCH_VOTED,
@@ -1166,20 +1150,6 @@ static struct clk_branch gcc_camera_axi_clk = {
 		.enable_mask = BIT(0),
 		.hw.init = &(struct clk_init_data){
 			.name = "gcc_camera_axi_clk",
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_camera_xo_clk = {
-	.halt_reg = 0xb02c,
-	.halt_check = BRANCH_HALT,
-	.clkr = {
-		.enable_reg = 0xb02c,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_camera_xo_clk",
-			.flags = CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1311,22 +1281,6 @@ static struct clk_branch gcc_ddrss_gpu_axi_clk = {
 	},
 };
 
-static struct clk_branch gcc_disp_ahb_clk = {
-	.halt_reg = 0xb00c,
-	.halt_check = BRANCH_HALT,
-	.hwcg_reg = 0xb00c,
-	.hwcg_bit = 1,
-	.clkr = {
-		.enable_reg = 0xb00c,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_disp_ahb_clk",
-			.flags = CLK_IS_CRITICAL,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
 static struct clk_branch gcc_disp_axi_clk = {
 	.halt_reg = 0xb024,
 	.halt_check = BRANCH_VOTED,
@@ -1367,20 +1321,6 @@ static struct clk_branch gcc_disp_gpll0_div_clk_src = {
 				&gpll0_out_even.clkr.hw,
 			},
 			.num_parents = 1,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_disp_xo_clk = {
-	.halt_reg = 0xb030,
-	.halt_check = BRANCH_HALT,
-	.clkr = {
-		.enable_reg = 0xb030,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_disp_xo_clk",
-			.flags = CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -1435,22 +1375,6 @@ static struct clk_branch gcc_gp3_clk = {
 			},
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_gpu_cfg_ahb_clk = {
-	.halt_reg = 0x71004,
-	.halt_check = BRANCH_HALT,
-	.hwcg_reg = 0x71004,
-	.hwcg_bit = 1,
-	.clkr = {
-		.enable_reg = 0x71004,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_gpu_cfg_ahb_clk",
-			.flags = CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -3069,22 +2993,6 @@ static struct clk_branch gcc_vddmx_vs_clk = {
 	},
 };
 
-static struct clk_branch gcc_video_ahb_clk = {
-	.halt_reg = 0xb004,
-	.halt_check = BRANCH_HALT,
-	.hwcg_reg = 0xb004,
-	.hwcg_bit = 1,
-	.clkr = {
-		.enable_reg = 0xb004,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_video_ahb_clk",
-			.flags = CLK_IS_CRITICAL,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
 static struct clk_branch gcc_video_axi_clk = {
 	.halt_reg = 0xb01c,
 	.halt_check = BRANCH_VOTED,
@@ -3093,20 +3001,6 @@ static struct clk_branch gcc_video_axi_clk = {
 		.enable_mask = BIT(0),
 		.hw.init = &(struct clk_init_data){
 			.name = "gcc_video_axi_clk",
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_video_xo_clk = {
-	.halt_reg = 0xb028,
-	.halt_check = BRANCH_HALT,
-	.clkr = {
-		.enable_reg = 0xb028,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_video_xo_clk",
-			.flags = CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -3140,36 +3034,6 @@ static struct clk_branch gcc_vs_ctrl_clk = {
 			},
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_cpuss_dvm_bus_clk = {
-	.halt_reg = 0x48190,
-	.halt_check = BRANCH_HALT,
-	.clkr = {
-		.enable_reg = 0x48190,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_cpuss_dvm_bus_clk",
-			.flags = CLK_IS_CRITICAL,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_cpuss_gnoc_clk = {
-	.halt_reg = 0x48004,
-	.halt_check = BRANCH_HALT_VOTED,
-	.hwcg_reg = 0x48004,
-	.hwcg_bit = 1,
-	.clkr = {
-		.enable_reg = 0x52004,
-		.enable_mask = BIT(22),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_cpuss_gnoc_clk",
-			.flags = CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -3331,9 +3195,7 @@ static struct clk_regmap *gcc_sdm845_clocks[] = {
 	[GCC_AGGRE_USB3_SEC_AXI_CLK] = &gcc_aggre_usb3_sec_axi_clk.clkr,
 	[GCC_APC_VS_CLK] = &gcc_apc_vs_clk.clkr,
 	[GCC_BOOT_ROM_AHB_CLK] = &gcc_boot_rom_ahb_clk.clkr,
-	[GCC_CAMERA_AHB_CLK] = &gcc_camera_ahb_clk.clkr,
 	[GCC_CAMERA_AXI_CLK] = &gcc_camera_axi_clk.clkr,
-	[GCC_CAMERA_XO_CLK] = &gcc_camera_xo_clk.clkr,
 	[GCC_CE1_AHB_CLK] = &gcc_ce1_ahb_clk.clkr,
 	[GCC_CE1_AXI_CLK] = &gcc_ce1_axi_clk.clkr,
 	[GCC_CE1_CLK] = &gcc_ce1_clk.clkr,
@@ -3344,18 +3206,15 @@ static struct clk_regmap *gcc_sdm845_clocks[] = {
 	[GCC_CPUSS_RBCPR_CLK] = &gcc_cpuss_rbcpr_clk.clkr,
 	[GCC_CPUSS_RBCPR_CLK_SRC] = &gcc_cpuss_rbcpr_clk_src.clkr,
 	[GCC_DDRSS_GPU_AXI_CLK] = &gcc_ddrss_gpu_axi_clk.clkr,
-	[GCC_DISP_AHB_CLK] = &gcc_disp_ahb_clk.clkr,
 	[GCC_DISP_AXI_CLK] = &gcc_disp_axi_clk.clkr,
 	[GCC_DISP_GPLL0_CLK_SRC] = &gcc_disp_gpll0_clk_src.clkr,
 	[GCC_DISP_GPLL0_DIV_CLK_SRC] = &gcc_disp_gpll0_div_clk_src.clkr,
-	[GCC_DISP_XO_CLK] = &gcc_disp_xo_clk.clkr,
 	[GCC_GP1_CLK] = &gcc_gp1_clk.clkr,
 	[GCC_GP1_CLK_SRC] = &gcc_gp1_clk_src.clkr,
 	[GCC_GP2_CLK] = &gcc_gp2_clk.clkr,
 	[GCC_GP2_CLK_SRC] = &gcc_gp2_clk_src.clkr,
 	[GCC_GP3_CLK] = &gcc_gp3_clk.clkr,
 	[GCC_GP3_CLK_SRC] = &gcc_gp3_clk_src.clkr,
-	[GCC_GPU_CFG_AHB_CLK] = &gcc_gpu_cfg_ahb_clk.clkr,
 	[GCC_GPU_GPLL0_CLK_SRC] = &gcc_gpu_gpll0_clk_src.clkr,
 	[GCC_GPU_GPLL0_DIV_CLK_SRC] = &gcc_gpu_gpll0_div_clk_src.clkr,
 	[GCC_GPU_IREF_CLK] = &gcc_gpu_iref_clk.clkr,
@@ -3498,9 +3357,7 @@ static struct clk_regmap *gcc_sdm845_clocks[] = {
 	[GCC_VDDA_VS_CLK] = &gcc_vdda_vs_clk.clkr,
 	[GCC_VDDCX_VS_CLK] = &gcc_vddcx_vs_clk.clkr,
 	[GCC_VDDMX_VS_CLK] = &gcc_vddmx_vs_clk.clkr,
-	[GCC_VIDEO_AHB_CLK] = &gcc_video_ahb_clk.clkr,
 	[GCC_VIDEO_AXI_CLK] = &gcc_video_axi_clk.clkr,
-	[GCC_VIDEO_XO_CLK] = &gcc_video_xo_clk.clkr,
 	[GCC_VS_CTRL_AHB_CLK] = &gcc_vs_ctrl_ahb_clk.clkr,
 	[GCC_VS_CTRL_CLK] = &gcc_vs_ctrl_clk.clkr,
 	[GCC_VS_CTRL_CLK_SRC] = &gcc_vs_ctrl_clk_src.clkr,
@@ -3508,8 +3365,6 @@ static struct clk_regmap *gcc_sdm845_clocks[] = {
 	[GPLL0] = &gpll0.clkr,
 	[GPLL0_OUT_EVEN] = &gpll0_out_even.clkr,
 	[GPLL4] = &gpll4.clkr,
-	[GCC_CPUSS_DVM_BUS_CLK] = &gcc_cpuss_dvm_bus_clk.clkr,
-	[GCC_CPUSS_GNOC_CLK] = &gcc_cpuss_gnoc_clk.clkr,
 	[GCC_QSPI_CORE_CLK_SRC] = &gcc_qspi_core_clk_src.clkr,
 	[GCC_QSPI_CORE_CLK] = &gcc_qspi_core_clk.clkr,
 	[GCC_QSPI_CNOC_PERIPH_AHB_CLK] = &gcc_qspi_cnoc_periph_ahb_clk.clkr,
@@ -3625,6 +3480,23 @@ static int gcc_sdm845_probe(struct platform_device *pdev)
 	/* Disable the GPLL0 active input to MMSS and GPU via MISC registers */
 	regmap_update_bits(regmap, 0x09ffc, 0x3, 0x3);
 	regmap_update_bits(regmap, 0x71028, 0x3, 0x3);
+
+	/*
+	 * Keep clocks always enabled:
+	 * GCC_CAMERA_AHB_CLK, GCC_CAMERA_XO_CLK, GCC_CPUSS_DVM_BUS_CLK,
+	 * GCC_CPUSS_GNOC_CLk, GCC_DISP_AHB_CLK, GCC_DISP_XO_CLK,
+	 * GCC_GPU_CFG_AHB_CLK, GCC_VIDEO_AHB_CLK,
+	 * GCC_VIDEO_XO_CLK.
+	 */
+	regmap_update_bits(regmap, 0xb008, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0xb02c, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0x48190, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0x48004, BIT(22), BIT(22));
+	regmap_update_bits(regmap, 0xb00c, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0xb030, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0x71004, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0xb004, BIT(0), BIT(0));
+	regmap_update_bits(regmap, 0xb028, BIT(0), BIT(0));
 
 	ret = qcom_cc_register_rcg_dfs(regmap, gcc_dfs_clocks,
 					ARRAY_SIZE(gcc_dfs_clocks));
