@@ -8,75 +8,7 @@
 
 #include <linux/iio/iio.h>
 #include <dt-bindings/iio/qti_power_supply_iio.h>
-
-enum iio_type {
-	MAIN,
-	QG,
-	CP,
-	SMB_PARALLEL,
-};
-
-/* For qpnp-smb5.c and smb5-lib.c */
-enum qg_chg_iio_channels {
-	SMB5_QG_DEBUG_BATTERY,
-	SMB5_QG_CAPACITY,
-	SMB5_QG_REAL_CAPACITY,
-	SMB5_QG_CC_SOC,
-	SMB5_QG_CURRENT_NOW,
-	SMB5_QG_VOLTAGE_NOW,
-	SMB5_QG_VOLTAGE_MAX,
-	SMB5_QG_CHARGE_FULL,
-	SMB5_QG_RESISTANCE_ID,
-	SMB5_QG_TEMP,
-	SMB5_QG_CHARGE_COUNTER,
-	SMB5_QG_CYCLE_COUNT,
-	SMB5_QG_CHARGE_FULL_DESIGN,
-	SMB5_QG_TIME_TO_FULL_NOW,
-};
-
-enum cp_iio_channels {
-	CP_PARALLEL_OUTPUT_MODE,
-	CP_MASTER_ENABLE,
-	CP_ILIM,
-	CP_DIE_TEMP,
-};
-
-/* For smb5-lib.c and smb5-iio.c */
-enum smb_parallel_iio_channels {
-	SMB_CHARGER_TEMP,
-	SMB_CHARGER_TEMP_MAX,
-	SMB_SET_SHIP_MODE,
-};
-
-/* For step-chg-jeita.c */
-enum step_chg_iio_channels {
-	STEP_QG_RESISTANCE_ID = 0,
-	STEP_QG_VOLTAGE_NOW,
-	STEP_QG_TEMP,
-	STEP_QG_CAPACITY,
-	STEP_QG_VOLTAGE_OCV,
-	STEP_QG_VOLTAGE_AVG,
-};
-
-/* For battery.c */
-enum bat_cp_iio_channels {
-	BAT_CP_PARALLEL_MODE,
-	BAT_CP_PARALLEL_OUTPUT_MODE,
-	BAT_CP_MIN_ICL,
-	BAT_CP_SWITCHER_EN,
-};
-
-enum bat_smb_parallel_iio_channels {
-	BAT_SMB_PARALLEL_INPUT_SUSPEND,
-	BAT_SMB_PARALLEL_MODE,
-	BAT_SMB_PARALLEL_BATFET_MODE,
-	BAT_SMB_PARALLEL_MIN_ICL,
-	BAT_SMB_PARALLEL_FCC_MAX,
-	BAT_SMB_PARALLEL_CURRENT_MAX,
-	BAT_SMB_PARALLEL_CONSTANT_CHARGE_CURRENT_MAX,
-	BAT_SMB_PARALLEL_VOLTAGE_MAX,
-	BAT_SMB_PARALLEL_CHARGE_TYPE,
-};
+#include "iio-channels.h"
 
 struct smb5_iio_prop_channels {
 	const char *datasheet_name;

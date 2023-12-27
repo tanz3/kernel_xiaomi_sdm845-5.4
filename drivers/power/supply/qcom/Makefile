@@ -18,4 +18,5 @@ qti-qbg-main-y	+= qti-qbg.o qbg-sdam.o qbg-battery-profile.o battery-profile-loa
 
 # Legacy
 obj-$(CONFIG_QPNP_FG_GEN3)		+= qpnp-fg-gen3.o fg-memif.o fg-util.o
-obj-$(CONFIG_QPNP_SMB2)			+= step-chg-jeita.o battery.o qpnp-smb2.o smb-lib.o pmic-voter.o storm-watch.o
+obj-$(CONFIG_QPNP_SMB2) += qpnp-smb2-main.o
+qpnp-smb2-main-y += step-chg-jeita.o battery.o qpnp-smb2.o smb-lib.o pmic-voter.o storm-watch.o battery-profile-loader.o smb-iio.o
