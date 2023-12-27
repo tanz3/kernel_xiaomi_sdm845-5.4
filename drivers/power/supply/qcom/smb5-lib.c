@@ -893,20 +893,20 @@ static const char * const smblib_parallel_ext_iio_chan[] = {
 
 /* QG/FG channels */
 static const char * const smblib_qg_ext_iio_chan[] = {
-	[SMB5_QG_DEBUG_BATTERY] = "debug_battery",
-	[SMB5_QG_CAPACITY] = "capacity",
-	[SMB5_QG_REAL_CAPACITY] = "real_capacity",
-	[SMB5_QG_CC_SOC] = "cc_soc",
-	[SMB5_QG_CURRENT_NOW] = "current_now",
-	[SMB5_QG_VOLTAGE_NOW] = "voltage_now",
-	[SMB5_QG_VOLTAGE_MAX] = "voltage_max",
-	[SMB5_QG_CHARGE_FULL] = "charge_full",
-	[SMB5_QG_RESISTANCE_ID] = "resistance_id",
-	[SMB5_QG_TEMP] = "temp",
-	[SMB5_QG_CHARGE_COUNTER] = "charge_counter",
-	[SMB5_QG_CYCLE_COUNT] = "cycle_count",
-	[SMB5_QG_CHARGE_FULL_DESIGN] = "charge_full_design",
-	[SMB5_QG_TIME_TO_FULL_NOW] = "time_to_full_now",
+	[SMB_QG_DEBUG_BATTERY] = "debug_battery",
+	[SMB_QG_CAPACITY] = "capacity",
+	[SMB_QG_REAL_CAPACITY] = "real_capacity",
+	[SMB_QG_CC_SOC] = "cc_soc",
+	[SMB_QG_CURRENT_NOW] = "current_now",
+	[SMB_QG_VOLTAGE_NOW] = "voltage_now",
+	[SMB_QG_VOLTAGE_MAX] = "voltage_max",
+	[SMB_QG_CHARGE_FULL] = "charge_full",
+	[SMB_QG_RESISTANCE_ID] = "resistance_id",
+	[SMB_QG_TEMP] = "temp",
+	[SMB_QG_CHARGE_COUNTER] = "charge_counter",
+	[SMB_QG_CYCLE_COUNT] = "cycle_count",
+	[SMB_QG_CHARGE_FULL_DESIGN] = "charge_full_design",
+	[SMB_QG_TIME_TO_FULL_NOW] = "time_to_full_now",
 };
 
 static int smblib_read_iio_prop(struct smb_charger *chg,
@@ -1377,7 +1377,7 @@ void smblib_config_charger_on_debug_battery(struct smb_charger *chg)
 {
 	int rc = 0, val;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_DEBUG_BATTERY, &val);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_DEBUG_BATTERY, &val);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't get debug battery prop rc=%d\n", rc);
 		return;
@@ -2046,7 +2046,7 @@ int smblib_get_prop_batt_capacity(struct smb_charger *chg,
 		return 0;
 	}
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_CAPACITY, &val->intval);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_CAPACITY, &val->intval);
 	if (rc < 0)
 		smblib_err(chg, "Couldn't get capacity prop rc=%d\n", rc);
 
@@ -2077,7 +2077,7 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 	int rc, suspend = 0, input_present = 0;
 
 	if (chg->fake_chg_status_on_debug_batt) {
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_DEBUG_BATTERY,
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_DEBUG_BATTERY,
 				&pval.intval);
 		if (rc < 0) {
 			pr_err_ratelimited("Couldn't get debug battery prop rc=%d\n",
@@ -2109,9 +2109,9 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 	 * the battery status as DISCHARGING.
 	 */
 	smblib_is_input_present(chg, &input_present);
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_CAPACITY, &pval.intval);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_CAPACITY, &pval.intval);
 	if (!rc && pval.intval == 0 && input_present) {
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_CURRENT_NOW,
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_CURRENT_NOW,
 				&pval.intval);
 		if (!rc && pval.intval > 0) {
 			if (chg->cutoff_count > CUTOFF_COUNT) {
@@ -2297,7 +2297,7 @@ int smblib_get_prop_batt_health(struct smb_charger *chg,
 		   stat);
 
 	if (stat & CHARGER_ERROR_STATUS_BAT_OV_BIT) {
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_VOLTAGE_NOW,
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_VOLTAGE_NOW,
 				&pval.intval);
 		if (rc < 0) {
 			smblib_err(chg, "Couldn't get voltage_now prop rc=%d\n",
@@ -2442,7 +2442,7 @@ int smblib_get_batt_current_now(struct smb_charger *chg,
 {
 	int rc;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_CURRENT_NOW, &val->intval);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_CURRENT_NOW, &val->intval);
 	if (!rc)
 		val->intval *= (-1);
 	else
@@ -5206,7 +5206,7 @@ static void smblib_eval_chg_termination(struct smb_charger *chg, u8 batt_status)
 	union power_supply_propval pval = {0, };
 	int rc = 0;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_REAL_CAPACITY, &pval.intval);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_REAL_CAPACITY, &pval.intval);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't read SOC value, rc=%d\n", rc);
 		return;
@@ -7660,7 +7660,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 	if ((rc < 0) || !input_present)
 		goto out;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_REAL_CAPACITY, &val);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_REAL_CAPACITY, &val);
 	if ((rc < 0) || (val < 100)) {
 		vote(chg->usb_icl_votable, CHG_TERMINATION_VOTER, false, 0);
 		vote(chg->dc_suspend_votable, CHG_TERMINATION_VOTER, false, 0);
@@ -7684,7 +7684,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 	}
 
 	/* Get the battery float voltage */
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_VOLTAGE_MAX, &val);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_VOLTAGE_MAX, &val);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't read voltage_max prop, rc=%d\n", rc);
 		goto out;
@@ -7692,7 +7692,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 
 	max_fv_uv = val;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_CHARGE_FULL, &val);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_CHARGE_FULL, &val);
 	if (rc < 0) {
 		smblib_err(chg, "Couldn't read charge_full prop, rc=%d\n", rc);
 		goto out;
@@ -7707,7 +7707,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 	if (val != chg->charge_full_cc || !chg->cc_soc_ref) {
 		chg->charge_full_cc = val;
 
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_VOLTAGE_NOW, &val);
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_VOLTAGE_NOW, &val);
 		if (rc < 0) {
 			smblib_err(chg, "Couldn't read voltage_now prop, rc=%d\n",
 				rc);
@@ -7722,7 +7722,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 		chg->term_vbat_uv = val;
 		vbat_now_uv = val;
 
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_CC_SOC, &val);
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_CC_SOC, &val);
 		if (rc < 0) {
 			smblib_err(chg, "Couldn't read cc_soc prop, rc=%d\n",
 				rc);
@@ -7730,7 +7730,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 		}
 		chg->cc_soc_ref = val;
 	} else {
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_VOLTAGE_NOW, &val);
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_VOLTAGE_NOW, &val);
 		if (rc < 0) {
 			smblib_err(chg, "Couldn't read voltage_now prop, rc=%d\n",
 				rc);
@@ -7739,7 +7739,7 @@ static void smblib_chg_termination_work(struct work_struct *work)
 
 		vbat_now_uv = val;
 
-		rc = smblib_get_prop_from_bms(chg, SMB5_QG_CC_SOC, &val);
+		rc = smblib_get_prop_from_bms(chg, SMB_QG_CC_SOC, &val);
 		if (rc < 0) {
 			smblib_err(chg, "Couldn't read cc_soc prop, rc=%d\n",
 				rc);
@@ -7840,7 +7840,7 @@ static void jeita_update_work(struct work_struct *work)
 	if (IS_ERR_OR_NULL(chg->iio_chan_list_qg))
 		return;
 
-	rc = smblib_get_prop_from_bms(chg, SMB5_QG_RESISTANCE_ID, &val.intval);
+	rc = smblib_get_prop_from_bms(chg, SMB_QG_RESISTANCE_ID, &val.intval);
 	if (rc < 0) {
 		smblib_err(chg, "Failed to get batt-id rc=%d\n", rc);
 		goto out;
