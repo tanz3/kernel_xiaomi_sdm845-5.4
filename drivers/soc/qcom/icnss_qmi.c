@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "icnss_qmi: " fmt
@@ -19,10 +19,11 @@
 #include <linux/ipc_logging.h>
 #include <linux/thread_info.h>
 #include <linux/soc/qcom/qmi.h>
+#include <linux/platform_device.h>
 #include <soc/qcom/icnss.h>
 #include <soc/qcom/service-locator.h>
 #include <soc/qcom/service-notifier.h>
-#include "wlan_firmware_service_v01.h"
+#include "../../net/wireless/cnss_utils/wlan_firmware_service_v01.h"
 #include "icnss_private.h"
 #include "icnss_qmi.h"
 
@@ -65,6 +66,7 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 	struct wlfw_msa_info_req_msg_v01 *req;
 	struct wlfw_msa_info_resp_msg_v01 *resp;
 	struct qmi_txn txn;
+	uint64_t max_mapped_addr;
 
 	if (!priv)
 		return -ENODEV;
@@ -126,9 +128,23 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 		goto out;
 	}
 
+	max_mapped_addr = priv->msa_pa + priv->msa_mem_size;
 	priv->stats.msa_info_resp++;
 	priv->nr_mem_region = resp->mem_region_info_len;
 	for (i = 0; i < resp->mem_region_info_len; i++) {
+
+		if (resp->mem_region_info[i].size > priv->msa_mem_size ||
+		    resp->mem_region_info[i].region_addr >= max_mapped_addr ||
+		    resp->mem_region_info[i].region_addr < priv->msa_pa ||
+		    resp->mem_region_info[i].size +
+		    resp->mem_region_info[i].region_addr > max_mapped_addr) {
+			icnss_pr_dbg("Received out of range Addr: 0x%llx Size: 0x%x\n",
+					resp->mem_region_info[i].region_addr,
+					resp->mem_region_info[i].size);
+			ret = -EINVAL;
+			goto fail_unwind;
+		}
+
 		priv->mem_region[i].reg_addr =
 			resp->mem_region_info[i].region_addr;
 		priv->mem_region[i].size =
@@ -145,6 +161,8 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 	kfree(req);
 	return 0;
 
+fail_unwind:
+	memset(&priv->mem_region[0], 0, sizeof(priv->mem_region[0]) * i);
 out:
 	kfree(resp);
 	kfree(req);
@@ -290,14 +308,23 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 
 	priv->stats.ind_register_resp++;
 
+	if (resp->fw_status_valid &&
+	   (resp->fw_status & QMI_WLFW_ALREADY_REGISTERED_V01)) {
+		ret = -EALREADY;
+		icnss_pr_dbg("WLFW already registered\n");
+		goto qmi_registered;
+	}
+
 	kfree(resp);
 	kfree(req);
+
 	return 0;
 
 out:
+	priv->stats.ind_register_err++;
+qmi_registered:
 	kfree(resp);
 	kfree(req);
-	priv->stats.ind_register_err++;
 	return ret;
 }
 
@@ -348,11 +375,14 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 				    ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
+		ret = -resp->resp.result;
+		if (resp->resp.error == QMI_ERR_PLAT_CCPM_CLK_INIT_FAILED) {
+			icnss_pr_err("RF card not present\n");
+			goto out;
+		}
+
 		icnss_qmi_fatal_err("QMI Capability request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
-		ret = -resp->resp.result;
-		if (resp->resp.error == QMI_ERR_PLAT_CCPM_CLK_INIT_FAILED)
-			icnss_qmi_fatal_err("RF card not present\n");
 		goto out;
 	}
 
@@ -378,6 +408,9 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 	if (resp->fw_build_id_valid)
 		strlcpy(priv->fw_build_id, resp->fw_build_id,
 			QMI_WLFW_MAX_BUILD_ID_LEN_V01 + 1);
+	if (resp->rd_card_chain_cap_valid &&
+	    resp->rd_card_chain_cap == WLFW_RD_CARD_CHAIN_CAP_1x1_V01)
+		priv->is_chain1_supported = false;
 
 	icnss_pr_dbg("Capability, chip_id: 0x%x, chip_family: 0x%x, board_id: 0x%x, soc_id: 0x%x, fw_version: 0x%x, fw_build_timestamp: %s, fw_build_id: %s",
 		     priv->chip_info.chip_id, priv->chip_info.chip_family,
@@ -456,9 +489,14 @@ int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
 		icnss_qmi_fatal_err("Mode resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
+		ret = -resp->resp.result;
+		if (resp->resp.error == QMI_ERR_PLAT_CCPM_CLK_INIT_FAILED) {
+			icnss_pr_err("QMI Mode req rejected as CCPM init failed, result:%d error:%d\n",
+				     resp->resp.result, resp->resp.error);
+			goto out;
+		}
 		icnss_qmi_fatal_err("QMI Mode request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
-		ret = -resp->resp.result;
 		goto out;
 	}
 
@@ -978,7 +1016,7 @@ out:
 void icnss_handle_rejuvenate(struct icnss_priv *priv)
 {
 	struct icnss_event_pd_service_down_data *event_data;
-	struct icnss_uevent_fw_down_data fw_down_data;
+	struct icnss_uevent_fw_down_data fw_down_data = {0};
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
 	if (event_data == NULL)
@@ -1013,6 +1051,10 @@ static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 			     struct qmi_txn *txn, const void *data)
 {
 	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
+	struct device *dev = &priv->pdev->dev;
+	const struct wlfw_msa_ready_ind_msg_v01 *ind_msg = data;
+	uint64_t msa_base_addr = priv->msa_pa;
+	phys_addr_t hang_data_phy_addr;
 
 	icnss_pr_dbg("Received MSA Ready Indication\n");
 
@@ -1022,6 +1064,59 @@ static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 	}
 
 	priv->stats.msa_ready_ind++;
+
+	/* Check if the length is valid &
+	 * the length should not be 0 and
+	 * should be <=  WLFW_MAX_HANG_EVENT_DATA_SIZE(400)
+	 */
+
+	if (ind_msg->hang_data_length_valid &&
+	    ind_msg->hang_data_length &&
+	    ind_msg->hang_data_length <= WLFW_MAX_HANG_EVENT_DATA_SIZE)
+		priv->hang_event_data_len = ind_msg->hang_data_length;
+	else
+		goto out;
+
+	/* Check if the offset is valid &
+	 * the offset should be in range of 0 to msa_mem_size-hang_data_length
+	 */
+
+	if (ind_msg->hang_data_addr_offset_valid &&
+	    (ind_msg->hang_data_addr_offset <= (priv->msa_mem_size -
+						 ind_msg->hang_data_length)))
+		hang_data_phy_addr = msa_base_addr +
+						ind_msg->hang_data_addr_offset;
+	else
+		goto out;
+
+	if (priv->hang_event_data_pa == hang_data_phy_addr)
+		goto exit;
+
+	priv->hang_event_data_pa = hang_data_phy_addr;
+	priv->hang_event_data_va = devm_ioremap(dev, priv->hang_event_data_pa,
+						ind_msg->hang_data_length);
+
+	if (!priv->hang_event_data_va) {
+		icnss_pr_err("Hang Data ioremap failed: phy addr: %pa\n",
+			     &priv->hang_event_data_pa);
+		goto fail;
+	}
+exit:
+	icnss_pr_dbg("Hang Event Data details,Offset:0x%x, Length:0x%x,va_addr: 0x%pK\n",
+		     ind_msg->hang_data_addr_offset,
+		     ind_msg->hang_data_length,
+		     priv->hang_event_data_va);
+
+	return;
+
+out:
+	icnss_pr_err("Invalid Hang Data details, Offset:0x%x, Length:0x%x",
+		     ind_msg->hang_data_addr_offset,
+		     ind_msg->hang_data_length);
+fail:
+	priv->hang_event_data_va = NULL;
+	priv->hang_event_data_pa = 0;
+	priv->hang_event_data_len = 0;
 }
 
 static void pin_connect_result_ind_cb(struct qmi_handle *qmi,
@@ -1140,7 +1235,6 @@ int icnss_connect_to_fw_server(struct icnss_priv *priv, void *data)
 		ret = -ENODEV;
 		goto out;
 	}
-	set_bit(ICNSS_WLFW_EXISTS, &priv->state);
 
 	sq.sq_family = AF_QIPCRTR;
 	sq.sq_node = event_data->node;
@@ -1164,11 +1258,23 @@ out:
 
 int icnss_clear_server(struct icnss_priv *priv)
 {
+	int ret;
+
 	if (!priv)
 		return -ENODEV;
 
 	icnss_pr_info("QMI Service Disconnected: 0x%lx\n", priv->state);
 	clear_bit(ICNSS_WLFW_CONNECTED, &priv->state);
+
+	icnss_unregister_fw_service(priv);
+
+	clear_bit(ICNSS_DEL_SERVER, &priv->state);
+
+	ret =  icnss_register_fw_service(priv);
+	if (ret < 0) {
+		icnss_pr_err("WLFW server registration failed\n");
+		ICNSS_ASSERT(0);
+	}
 
 	return 0;
 }
@@ -1176,7 +1282,14 @@ int icnss_clear_server(struct icnss_priv *priv)
 static int wlfw_new_server(struct qmi_handle *qmi,
 			   struct qmi_service *service)
 {
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	struct icnss_event_server_arrive_data *event_data;
+
+	if (priv && test_bit(ICNSS_DEL_SERVER, &priv->state)) {
+		icnss_pr_info("WLFW server delete in progress, Ignore server arrive: 0x%lx\n",
+			      priv->state);
+		return 0;
+	}
 
 	icnss_pr_dbg("WLFW server arrive: node %u port %u\n",
 		     service->node, service->port);
@@ -1199,9 +1312,16 @@ static void wlfw_del_server(struct qmi_handle *qmi,
 {
 	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 
+	if (priv && test_bit(ICNSS_DEL_SERVER, &priv->state)) {
+		icnss_pr_info("WLFW server delete in progress, Ignore server delete:  0x%lx\n",
+			      priv->state);
+		return;
+	}
+
 	icnss_pr_dbg("WLFW server delete\n");
 
 	if (priv) {
+		set_bit(ICNSS_DEL_SERVER, &priv->state);
 		set_bit(ICNSS_FW_DOWN, &priv->state);
 		icnss_ignore_fw_timeout(true);
 	}
