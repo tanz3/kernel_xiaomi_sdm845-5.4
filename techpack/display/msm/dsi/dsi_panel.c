@@ -6049,7 +6049,7 @@ static int parse_to_dcs_cmds(struct dsi_panel_cmd_set *on_cmd_sets)
 		return -ENOMEM;
 	}
 
-	ret = kernel_read(filp, filp->f_pos, data, file_size);
+	ret = kernel_read(filp, data, file_size, &filp->f_pos);
 	if (ret < 0) {
 		pr_err("[LCD]%s read failed, return %d\n", file_name, ret);
 		goto exit_free;
