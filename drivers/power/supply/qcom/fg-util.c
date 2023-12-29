@@ -6,6 +6,7 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/sort.h>
+#include <linux/iio/consumer.h>
 #include "fg-core.h"
 #include "fg-reg.h"
 
@@ -458,13 +459,10 @@ bool pc_port_psy_initialized(struct fg_dev *fg)
 
 bool is_parallel_charger_available(struct fg_dev *fg)
 {
-	if (!fg->parallel_psy)
-		fg->parallel_psy = power_supply_get_by_name("parallel");
+	if (is_chan_valid(fg, PARALLEL_CHARGING_ENABLED))
+		return true;
 
-	if (!fg->parallel_psy)
-		return false;
-
-	return true;
+	return false;
 }
 
 #define EXPONENT_SHIFT		11
@@ -1708,3 +1706,51 @@ void fg_relax(struct fg_dev *fg, int awake_reason)
 	spin_unlock(&fg->awake_lock);
 }
 
+bool is_chan_valid(struct fg_dev *fg,
+		enum fg_ext_iio_channels chan)
+{
+	int rc;
+
+	if (IS_ERR(fg->ext_iio_chans[chan]))
+		return false;
+
+	if (!fg->ext_iio_chans[chan]) {
+		fg->ext_iio_chans[chan] = iio_channel_get(fg->dev,
+					fg_ext_iio_chan_name[chan]);
+		if (IS_ERR(fg->ext_iio_chans[chan])) {
+			rc = PTR_ERR(fg->ext_iio_chans[chan]);
+			if (rc == -EPROBE_DEFER)
+				fg->ext_iio_chans[chan] = NULL;
+
+			pr_err("Failed to get IIO channel %s, rc=%d\n",
+				fg_ext_iio_chan_name[chan], rc);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int fg_read_iio_chan(struct fg_dev *fg,
+	enum fg_ext_iio_channels chan, int *val)
+{
+	int rc;
+
+	if (is_chan_valid(fg, chan)) {
+		rc = iio_read_channel_processed(
+				fg->ext_iio_chans[chan], val);
+		return (rc < 0) ? rc : 0;
+	}
+
+	return -EINVAL;
+}
+
+int fg_write_iio_chan(struct fg_dev *fg,
+	enum fg_ext_iio_channels chan, int val)
+{
+	if (is_chan_valid(fg, chan))
+		return iio_write_channel_raw(fg->ext_iio_chans[chan],
+						val);
+
+	return -EINVAL;
+}

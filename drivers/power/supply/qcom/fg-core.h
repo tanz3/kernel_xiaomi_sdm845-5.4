@@ -26,6 +26,7 @@
 #include <linux/types.h>
 #include <linux/uaccess.h>
 #include <linux/pmic-voter.h>
+#include "fg-iio.h"
 
 #define fg_dbg(fg, reason, fmt, ...)			\
 	do {							\
@@ -434,6 +435,10 @@ struct fg_dev {
 	struct power_supply	*dc_psy;
 	struct power_supply	*parallel_psy;
 	struct power_supply	*pc_port_psy;
+	struct iio_dev		*indio_dev;
+	struct iio_chan_spec	*iio_chan;
+	struct iio_channel	*int_iio_chans;
+	struct iio_channel	**ext_iio_chans;
 	struct fg_irq_info	*irqs;
 	struct votable		*awake_votable;
 	struct votable		*delta_bsoc_irq_en_votable;
@@ -459,6 +464,7 @@ struct fg_dev {
 	u32			wa_flags;
 	u32			esr_wakeup_ms;
 	u32			awake_status;
+	u32			pmic_version;
 	int			batt_id_ohms;
 	int			charge_status;
 	int			prev_charge_status;
@@ -607,5 +613,9 @@ extern int fg_lerp(const struct fg_pt *pts, size_t tablesize, s32 input,
 			s32 *output);
 void fg_stay_awake(struct fg_dev *fg, int awake_reason);
 void fg_relax(struct fg_dev *fg, int awake_reason);
-extern int fg_dma_mem_req(struct fg_dev *fg, bool request);
+bool is_chan_valid(struct fg_dev *fg, enum fg_ext_iio_channels chan);
+extern int fg_read_iio_chan(struct fg_dev *fg,
+	enum fg_ext_iio_channels chan, int *val);
+extern int fg_write_iio_chan(struct fg_dev *fg,
+	enum fg_ext_iio_channels chan, int val);
 #endif

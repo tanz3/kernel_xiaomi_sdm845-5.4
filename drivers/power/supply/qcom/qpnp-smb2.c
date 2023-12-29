@@ -761,7 +761,9 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	POWER_SUPPLY_PROP_VOLTAGE_QNOVO,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CURRENT_QNOVO,
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX,
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT,
 	POWER_SUPPLY_PROP_TEMP,
@@ -810,6 +812,17 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		pval->intval = get_client_vote(chg->fv_votable,
 				BATT_PROFILE_VOTER);
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_QNOVO_ENABLE:
+		rc = smblib_get_prop_charge_qnovo_enable(chg, pval);
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_QNOVO:
+		pval->intval = get_client_vote_locked(chg->fv_votable,
+				QNOVO_VOTER);
+		break;
+	case POWER_SUPPLY_PROP_CURRENT_QNOVO:
+		pval->intval = get_client_vote_locked(chg->fcc_votable,
+				QNOVO_VOTER);
 		break;
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
 		pval->intval = get_client_vote(chg->fcc_votable,
@@ -870,6 +883,25 @@ static int smb2_batt_set_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		chg->batt_profile_fv_uv = val->intval;
 		vote(chg->fv_votable, BATT_PROFILE_VOTER, true, val->intval);
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_QNOVO_ENABLE:
+		rc = smblib_set_prop_charge_qnovo_enable(chg, val);
+		break;
+	case POWER_SUPPLY_PROP_VOLTAGE_QNOVO:
+		vote(chg->fv_votable, QNOVO_VOTER,
+			(val->intval >= 0), val->intval);
+		break;
+	case POWER_SUPPLY_PROP_CURRENT_QNOVO:
+		vote(chg->pl_disable_votable, PL_QNOVO_VOTER,
+			val->intval != -EINVAL && val->intval < 2000000, 0);
+		if (val->intval == -EINVAL) {
+			vote(chg->fcc_votable, BATT_PROFILE_VOTER,
+					true, chg->batt_profile_fcc_ua);
+			vote(chg->fcc_votable, QNOVO_VOTER, false, 0);
+		} else {
+			vote(chg->fcc_votable, QNOVO_VOTER, true, val->intval);
+			vote(chg->fcc_votable, BATT_PROFILE_VOTER, false, 0);
+		}
 		break;
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
 		chg->batt_profile_fcc_ua = val->intval;

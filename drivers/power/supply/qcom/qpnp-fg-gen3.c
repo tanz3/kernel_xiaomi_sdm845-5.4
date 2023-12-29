@@ -10,13 +10,15 @@
 #include <linux/spinlock.h>
 #include <linux/alarmtimer.h>
 #include <linux/of_platform.h>
-#include <linux/of_batterydata.h>
 #include <linux/platform_device.h>
 #include <linux/iio/consumer.h>
+#include <linux/iio/iio.h>
 #include <linux/qpnp/qpnp-revid.h>
 #include <linux/qpnp/qpnp-misc.h>
+#include <dt-bindings/iio/qti_power_supply_iio.h>
 #include "fg-core.h"
 #include "fg-reg.h"
+#include "battery-profile-loader.h"
 
 #define FG_GEN3_DEV_NAME	"qcom,fg-gen3"
 
@@ -2116,7 +2118,7 @@ static int fg_esr_fcc_config(struct fg_dev *fg)
 
 	if (is_parallel_charger_available(fg)) {
 		rc = power_supply_get_property(fg->parallel_psy,
-			POWER_SUPPLY_PROP_CHARGING_ENABLED, &prop);
+			PSY_IIO_CHARGING_ENABLED, &prop);
 		if (rc < 0) {
 			pr_err("Error in reading charging_enabled from parallel_psy, rc=%d\n",
 				rc);
@@ -2429,32 +2431,6 @@ static int fg_get_cycle_count(struct fg_dev *fg)
 	return len;
 }
 
-static const char *fg_get_cycle_counts(struct fg_dev *fg)
-{
-	struct fg_gen3_chip *chip = container_of(fg, struct fg_gen3_chip, fg);
-	int i, len = 0;
-	char *buf;
-
-	if (!chip->cyc_ctr.en)
-		return NULL;
-
-	buf = chip->cyc_ctr.counter;
-	mutex_lock(&chip->cyc_ctr.lock);
-	for (i = 0; i < BUCKET_COUNT; i++) {
-		if (sizeof(chip->cyc_ctr.counter) - len < 8) {
-			pr_err("Invalid length %d\n", len);
-			mutex_unlock(&chip->cyc_ctr.lock);
-			return NULL;
-		}
-
-		len += scnprintf(buf+len, 8, "%d ", chip->cyc_ctr.count[i]);
-	}
-	mutex_unlock(&chip->cyc_ctr.lock);
-
-	buf[len] = '\0';
-	return buf;
-}
-
 #define ESR_SW_FCC_UA				100000	/* 100mA */
 #define ESR_EXTRACTION_ENABLE_MASK		BIT(0)
 static void fg_esr_sw_work(struct work_struct *work)
@@ -2597,7 +2573,7 @@ static void status_change_work(struct work_struct *work)
 	struct fg_dev *fg = container_of(work,
 			struct fg_dev, status_change_work);
 	union power_supply_propval prop = {0, };
-	int rc, batt_temp;
+	int rc, batt_temp, val = 0;
 
 	if (!batt_psy_initialized(fg)) {
 		fg_dbg(fg, FG_STATUS, "Charger not available?!\n");
@@ -2628,9 +2604,8 @@ static void status_change_work(struct work_struct *work)
 		goto out;
 	}
 
-	fg->charge_type = prop.intval;
-	rc = power_supply_get_property(fg->batt_psy,
-			POWER_SUPPLY_PROP_CHARGE_DONE, &prop);
+	fg->charge_type = val;
+	rc = fg_read_iio_chan(fg, CHARGE_DONE, &val);
 	if (rc < 0) {
 		pr_err("Error in getting charge_done, rc=%d\n", rc);
 		goto out;
@@ -3220,7 +3195,7 @@ static int fg_get_time_to_full_locked(struct fg_dev *fg, int *val)
 	fg_dbg(fg, FG_TTF, "i_cc2cv=%d\n", i_cc2cv);
 
 	/* if we are already in CV state then we can skip estimating CC */
-	if (fg->charge_type == POWER_SUPPLY_CHARGE_TYPE_TAPER)
+	if (fg->charge_type == POWER_SUPPLY_CHARGE_TYPE_ADAPTIVE)
 		goto cv_estimate;
 
 	/* estimated SOC at the CC to CV transition */
@@ -3271,7 +3246,7 @@ cv_estimate:
 	iterm = max(100, abs(chip->dt.sys_term_curr_ma) + 200);
 	fg_dbg(fg, FG_TTF, "iterm=%d\n", iterm);
 
-	if (fg->charge_type == POWER_SUPPLY_CHARGE_TYPE_TAPER)
+	if (fg->charge_type == POWER_SUPPLY_CHARGE_TYPE_ADAPTIVE)
 		tau = max(MILLI_UNIT, ibatt_avg * MILLI_UNIT / iterm);
 	else
 		tau = max(MILLI_UNIT, i_cc2cv * MILLI_UNIT / iterm);
@@ -3637,125 +3612,119 @@ end_work:
 
 /* PSY CALLBACKS STAY HERE */
 
-static int fg_psy_get_property(struct power_supply *psy,
-				       enum power_supply_property psp,
-				       union power_supply_propval *pval)
+static int fg_iio_read_raw(struct iio_dev *indio_dev,
+		struct iio_chan_spec const *chan, int *val1,
+		int *val2, long mask)
 {
-	struct fg_gen3_chip *chip = power_supply_get_drvdata(psy);
+	struct fg_gen3_chip *chip = iio_priv(indio_dev);
 	struct fg_dev *fg = &chip->fg;
 	int rc = 0;
 
-	switch (psp) {
-	case POWER_SUPPLY_PROP_CAPACITY:
-		rc = fg_get_prop_capacity(fg, &pval->intval);
+	switch (chan->channel) {
+	case PSY_IIO_CAPACITY:
+		rc = fg_get_prop_capacity(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_REAL_CAPACITY:
-		rc = fg_get_prop_real_capacity(fg, &pval->intval);
+	case PSY_IIO_REAL_CAPACITY:
+		rc = fg_get_prop_real_capacity(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CAPACITY_RAW:
-		rc = fg_get_msoc_raw(fg, &pval->intval);
+	case PSY_IIO_CAPACITY_RAW:
+		rc = fg_get_msoc_raw(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+	case PSY_IIO_VOLTAGE_NOW:
 		if (fg->battery_missing)
-			pval->intval = 3700000;
+			*val1 = 3700000;
 		else
-			rc = fg_get_battery_voltage(fg, &pval->intval);
+			rc = fg_get_battery_voltage(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CURRENT_NOW:
-		rc = fg_get_battery_current(fg, &pval->intval);
+	case PSY_IIO_CURRENT_NOW:
+		rc = fg_get_battery_current(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_TEMP:
-		rc = fg_get_battery_temp(fg, &pval->intval);
+	case PSY_IIO_TEMP:
+		rc = fg_get_battery_temp(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_COLD_TEMP:
-		rc = fg_get_jeita_threshold(fg, JEITA_COLD, &pval->intval);
+	case PSY_IIO_COLD_TEMP:
+		rc = fg_get_jeita_threshold(fg, JEITA_COLD, val1);
 		if (rc < 0) {
 			pr_err("Error in reading jeita_cold, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_COOL_TEMP:
-		rc = fg_get_jeita_threshold(fg, JEITA_COOL, &pval->intval);
+	case PSY_IIO_COOL_TEMP:
+		rc = fg_get_jeita_threshold(fg, JEITA_COOL, val1);
 		if (rc < 0) {
 			pr_err("Error in reading jeita_cool, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_WARM_TEMP:
-		rc = fg_get_jeita_threshold(fg, JEITA_WARM, &pval->intval);
+	case PSY_IIO_WARM_TEMP:
+		rc = fg_get_jeita_threshold(fg, JEITA_WARM, val1);
 		if (rc < 0) {
 			pr_err("Error in reading jeita_warm, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_HOT_TEMP:
-		rc = fg_get_jeita_threshold(fg, JEITA_HOT, &pval->intval);
+	case PSY_IIO_HOT_TEMP:
+		rc = fg_get_jeita_threshold(fg, JEITA_HOT, val1);
 		if (rc < 0) {
 			pr_err("Error in reading jeita_hot, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_RESISTANCE:
-		rc = fg_get_battery_resistance(fg, &pval->intval);
+	case PSY_IIO_RESISTANCE:
+		rc = fg_get_battery_resistance(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_VOLTAGE_OCV:
-		rc = fg_get_sram_prop(fg, FG_SRAM_OCV, &pval->intval);
+	case PSY_IIO_VOLTAGE_OCV:
+		rc = fg_get_sram_prop(fg, FG_SRAM_OCV, val1);
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		pval->intval = chip->cl.nom_cap_uah;
+	case PSY_IIO_CHARGE_FULL_DESIGN:
+		*val1 = chip->cl.nom_cap_uah;
 		break;
-	case POWER_SUPPLY_PROP_RESISTANCE_ID:
-		pval->intval = fg->batt_id_ohms;
+	case PSY_IIO_RESISTANCE_ID:
+		*val1 = fg->batt_id_ohms;
 		break;
-	case POWER_SUPPLY_PROP_BATTERY_TYPE:
-		pval->strval = fg_get_battery_type(fg);
+	case PSY_IIO_VOLTAGE_MAX_DESIGN:
+		*val1 = fg->bp.float_volt_uv;
 		break;
-	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
-		pval->intval = fg->bp.float_volt_uv;
+	case PSY_IIO_CYCLE_COUNT:
+		*val1 = fg_get_cycle_count(fg);
 		break;
-	case POWER_SUPPLY_PROP_CYCLE_COUNT:
-		pval->intval = fg_get_cycle_count(fg);
+	case PSY_IIO_CHARGE_NOW_RAW:
+		rc = fg_get_charge_raw(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CYCLE_COUNTS:
-		pval->strval = fg_get_cycle_counts(fg);
+	case PSY_IIO_CHARGE_NOW:
+		*val1 = chip->cl.init_cc_uah;
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_NOW_RAW:
-		rc = fg_get_charge_raw(fg, &pval->intval);
+	case PSY_IIO_CHARGE_FULL:
+		*val1 = chip->cl.learned_cc_uah;
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_NOW:
-		pval->intval = chip->cl.init_cc_uah;
+	case PSY_IIO_CHARGE_COUNTER:
+		rc = fg_get_charge_counter(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_FULL:
-		pval->intval = chip->cl.learned_cc_uah;
+	case PSY_IIO_CHARGE_COUNTER_SHADOW:
+		rc = fg_get_charge_counter_shadow(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
-		rc = fg_get_charge_counter(fg, &pval->intval);
+	case PSY_IIO_TIME_TO_FULL_AVG:
+		rc = fg_get_time_to_full(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_COUNTER_SHADOW:
-		rc = fg_get_charge_counter_shadow(fg, &pval->intval);
+	case PSY_IIO_TIME_TO_FULL_NOW:
+		rc = fg_get_time_to_full(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_TIME_TO_FULL_AVG:
-		rc = fg_get_time_to_full(fg, &pval->intval);
+	case PSY_IIO_TIME_TO_EMPTY_AVG:
+		rc = fg_get_time_to_empty(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
-		rc = fg_get_time_to_full(fg, &pval->intval);
+	case PSY_IIO_SOC_REPORTING_READY:
+		*val1 = fg->soc_reporting_ready;
 		break;
-	case POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG:
-		rc = fg_get_time_to_empty(fg, &pval->intval);
+	case PSY_IIO_DEBUG_BATTERY:
+		*val1 = is_debug_batt_id(fg);
 		break;
-	case POWER_SUPPLY_PROP_SOC_REPORTING_READY:
-		pval->intval = fg->soc_reporting_ready;
+	case PSY_IIO_CONSTANT_CHARGE_VOLTAGE:
+		rc = fg_get_sram_prop(fg, FG_SRAM_VBATT_FULL, val1);
 		break;
-	case POWER_SUPPLY_PROP_DEBUG_BATTERY:
-		pval->intval = is_debug_batt_id(fg);
-		break;
-	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE:
-		rc = fg_get_sram_prop(fg, FG_SRAM_VBATT_FULL, &pval->intval);
-		break;
-	case POWER_SUPPLY_PROP_CC_STEP:
+	case PSY_IIO_CC_STEP:
 		if ((chip->ttf.cc_step.sel >= 0) &&
 				(chip->ttf.cc_step.sel < MAX_CC_STEPS)) {
-			pval->intval =
+			*val1 =
 				chip->ttf.cc_step.arr[chip->ttf.cc_step.sel];
 		} else {
 			pr_err("cc_step_sel is out of bounds [0, %d]\n",
@@ -3763,237 +3732,131 @@ static int fg_psy_get_property(struct power_supply *psy,
 			return -EINVAL;
 		}
 		break;
-	case POWER_SUPPLY_PROP_CC_STEP_SEL:
-		pval->intval = chip->ttf.cc_step.sel;
-		break;
-	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
-		pval->intval = 0;
+	case PSY_IIO_CC_STEP_SEL:
+		*val1 = chip->ttf.cc_step.sel;
 		break;
 	default:
-		pr_err("unsupported property %d\n", psp);
+		pr_debug("Unsupported property %d\n", chan->channel);
 		rc = -EINVAL;
 		break;
 	}
 
-	if (rc < 0)
-		return -ENODATA;
+	if (rc < 0) {
+		pr_err("Couldn't read IIO channel %d, rc = %d\n",
+			chan->channel, rc);
+		return rc;
+	}
 
-	return 0;
+	return IIO_VAL_INT;
 }
 
-#define BCL_RESET_RETRY_COUNT 4
-static int fg_bcl_reset(struct fg_dev *chip)
+static int fg_iio_write_raw(struct iio_dev *indio_dev,
+		struct iio_chan_spec const *chan, int val1,
+		int val2, long mask)
 {
-	int i, ret, rc = 0;
-	u8 val, peek_mux;
-	bool success = false;
-
-	/* Read initial value of peek mux1 */
-	rc = fg_read(chip, BATT_INFO_PEEK_MUX1(chip), &peek_mux, 1);
-	if (rc < 0) {
-		pr_err("Error in writing peek mux1, rc=%d\n", rc);
-		return rc;
-	}
-
-	val = 0x83;
-	rc = fg_write(chip, BATT_INFO_PEEK_MUX1(chip), &val, 1);
-	if (rc < 0) {
-		pr_err("Error in writing peek mux1, rc=%d\n", rc);
-		return rc;
-	}
-
-	mutex_lock(&chip->sram_rw_lock);
-	for (i = 0; i < BCL_RESET_RETRY_COUNT; i++) {
-		rc = fg_dma_mem_req(chip, true);
-		if (rc < 0) {
-			pr_err("Error in locking memory, rc=%d\n", rc);
-			goto unlock;
-		}
-
-		rc = fg_read(chip, BATT_INFO_RDBACK(chip), &val, 1);
-		if (rc < 0) {
-			pr_err("Error in reading rdback, rc=%d\n", rc);
-			goto release_mem;
-		}
-
-		if (val & PEEK_MUX1_BIT) {
-			rc = fg_masked_write(chip, BATT_SOC_RST_CTRL0(chip),
-						BCL_RESET_BIT, BCL_RESET_BIT);
-			if (rc < 0) {
-				pr_err("Error in writing RST_CTRL0, rc=%d\n",
-						rc);
-				goto release_mem;
-			}
-
-			rc = fg_dma_mem_req(chip, false);
-			if (rc < 0)
-				pr_err("Error in unlocking memory, rc=%d\n",
-						rc);
-
-			/* Delay of 2ms */
-			usleep_range(2000, 3000);
-			ret = fg_masked_write(chip, BATT_SOC_RST_CTRL0(chip),
-						BCL_RESET_BIT, 0);
-			if (ret < 0)
-				pr_err("Error in writing RST_CTRL0, rc=%d\n",
-						rc);
-			if (!rc && !ret)
-				success = true;
-
-			goto unlock;
-		} else {
-			rc = fg_dma_mem_req(chip, false);
-			if (rc < 0) {
-				pr_err("Error in unlocking memory, rc=%d\n",
-						rc);
-				goto unlock;
-			}
-			success = false;
-			pr_err_ratelimited("PEEK_MUX1 not set retrying...\n");
-			msleep(1000);
-		}
-	}
-
-release_mem:
-	rc = fg_dma_mem_req(chip, false);
-	if (rc < 0)
-		pr_err("Error in unlocking memory, rc=%d\n", rc);
-
-unlock:
-	ret = fg_write(chip, BATT_INFO_PEEK_MUX1(chip), &peek_mux, 1);
-	if (ret < 0) {
-		pr_err("Error in writing peek mux1, rc=%d\n", rc);
-		mutex_unlock(&chip->sram_rw_lock);
-		return ret;
-	}
-
-	mutex_unlock(&chip->sram_rw_lock);
-
-	if (!success)
-		return -EAGAIN;
-	else
-		return rc;
-}
-
-static int fg_psy_set_property(struct power_supply *psy,
-				  enum power_supply_property psp,
-				  const union power_supply_propval *pval)
-{
-	struct fg_gen3_chip *chip = power_supply_get_drvdata(psy);
+	struct fg_gen3_chip *chip = iio_priv(indio_dev);
 	struct fg_dev *fg = &chip->fg;
 	int rc = 0;
 
-	switch (psp) {
-	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE:
-		rc = fg_set_constant_chg_voltage(fg, pval->intval);
+	switch (chan->channel) {
+	case PSY_IIO_CONSTANT_CHARGE_VOLTAGE:
+		rc = fg_set_constant_chg_voltage(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_RESISTANCE:
+	case PSY_IIO_RESISTANCE:
 		rc = fg_force_esr_meas(fg);
 		break;
-	case POWER_SUPPLY_PROP_CHARGE_QNOVO_ENABLE:
-		rc = fg_prepare_for_qnovo(fg, pval->intval);
+	case PSY_IIO_CHARGE_QNOVO_ENABLE:
+		rc = fg_prepare_for_qnovo(fg, val1);
 		break;
-	case POWER_SUPPLY_PROP_CC_STEP:
+	case PSY_IIO_CC_STEP:
 		if ((chip->ttf.cc_step.sel >= 0) &&
 				(chip->ttf.cc_step.sel < MAX_CC_STEPS)) {
 			chip->ttf.cc_step.arr[chip->ttf.cc_step.sel] =
-								pval->intval;
+								val1;
 		} else {
 			pr_err("cc_step_sel is out of bounds [0, %d]\n",
 				chip->ttf.cc_step.sel);
 			return -EINVAL;
 		}
 		break;
-	case POWER_SUPPLY_PROP_CC_STEP_SEL:
-		if ((pval->intval >= 0) && (pval->intval < MAX_CC_STEPS)) {
-			chip->ttf.cc_step.sel = pval->intval;
+	case PSY_IIO_CC_STEP_SEL:
+		if ((val1 >= 0) && (val1 < MAX_CC_STEPS)) {
+			chip->ttf.cc_step.sel = val1;
 		} else {
 			pr_err("cc_step_sel is out of bounds [0, %d]\n",
-				pval->intval);
+				val1);
 			return -EINVAL;
 		}
 		break;
 
-	case POWER_SUPPLY_PROP_CHARGE_FULL:
+	case PSY_IIO_CHARGE_FULL:
 		if (chip->cl.active) {
 			pr_warn("Capacity learning active!\n");
 			return 0;
 		}
-		if (pval->intval <= 0 || pval->intval > chip->cl.nom_cap_uah) {
+		if (val1 <= 0 || val1 > chip->cl.nom_cap_uah) {
 			pr_err("charge_full is out of bounds\n");
 			return -EINVAL;
 		}
-		chip->cl.learned_cc_uah = pval->intval;
+		chip->cl.learned_cc_uah = val1;
 		rc = fg_save_learned_cap_to_sram(fg);
 		if (rc < 0)
 			pr_err("Error in saving learned_cc_uah, rc=%d\n", rc);
 		break;
-	case POWER_SUPPLY_PROP_COLD_TEMP:
-		rc = fg_set_jeita_threshold(fg, JEITA_COLD, pval->intval);
+	case PSY_IIO_COLD_TEMP:
+		rc = fg_set_jeita_threshold(fg, JEITA_COLD, val1);
 		if (rc < 0) {
 			pr_err("Error in writing jeita_cold, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_COOL_TEMP:
-		rc = fg_set_jeita_threshold(fg, JEITA_COOL, pval->intval);
+	case PSY_IIO_COOL_TEMP:
+		rc = fg_set_jeita_threshold(fg, JEITA_COOL, val1);
 		if (rc < 0) {
 			pr_err("Error in writing jeita_cool, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_WARM_TEMP:
-		rc = fg_set_jeita_threshold(fg, JEITA_WARM, pval->intval);
+	case PSY_IIO_WARM_TEMP:
+		rc = fg_set_jeita_threshold(fg, JEITA_WARM, val1);
 		if (rc < 0) {
 			pr_err("Error in writing jeita_warm, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-	case POWER_SUPPLY_PROP_HOT_TEMP:
-		rc = fg_set_jeita_threshold(fg, JEITA_HOT, pval->intval);
+	case PSY_IIO_HOT_TEMP:
+		rc = fg_set_jeita_threshold(fg, JEITA_HOT, val1);
 		if (rc < 0) {
 			pr_err("Error in writing jeita_hot, rc=%d\n", rc);
 			return rc;
 		}
 		break;
-
-	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
-		rc = fg_bcl_reset(fg);
-		if (rc < 0) {
-			pr_err("Error in resetting BCL clock, rc=%d\n", rc);
-			return rc;
-		}
-		break;
 	default:
+		pr_err("Unsupported FG IIO chan %d\n", chan->channel);
+		rc = -EINVAL;
 		break;
 	}
+
+	if (rc < 0)
+		pr_err("Couldn't write IIO channel %d, rc = %d\n",
+			chan->channel, rc);
 
 	return rc;
 }
 
-static int fg_property_is_writeable(struct power_supply *psy,
-						enum power_supply_property psp)
+static int fg_iio_of_xlate(struct iio_dev *indio_dev,
+				const struct of_phandle_args *iiospec)
 {
-	switch (psp) {
-	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE:
-	case POWER_SUPPLY_PROP_CC_STEP:
-	case POWER_SUPPLY_PROP_CC_STEP_SEL:
-	case POWER_SUPPLY_PROP_CHARGE_FULL:
-	case POWER_SUPPLY_PROP_COLD_TEMP:
-	case POWER_SUPPLY_PROP_COOL_TEMP:
-	case POWER_SUPPLY_PROP_WARM_TEMP:
-	case POWER_SUPPLY_PROP_HOT_TEMP:
-		return 1;
-	default:
-		break;
-	}
+	struct fg_dev *fg = iio_priv(indio_dev);
+	struct iio_chan_spec *iio_chan = fg->iio_chan;
+	int i;
 
-	return 0;
-}
+	for (i = 0; i < ARRAY_SIZE(fg_iio_psy_channels);
+					i++, iio_chan++)
+		if (iio_chan->channel == iiospec->args[0])
+			return i;
 
-static void fg_external_power_changed(struct power_supply *psy)
-{
-	pr_debug("power supply changed\n");
+	return -EINVAL;
 }
 
 static int fg_notifier_cb(struct notifier_block *nb,
@@ -4046,51 +3909,113 @@ static int twm_notifier_cb(struct notifier_block *nb,
 	return NOTIFY_OK;
 }
 
+static const struct iio_info fg_iio_info = {
+	.read_raw	= fg_iio_read_raw,
+	.write_raw	= fg_iio_write_raw,
+	.of_xlate	= fg_iio_of_xlate,
+};
+
+static int fg_psy_get_property(struct power_supply *psy,
+			       enum power_supply_property psp,
+			       union power_supply_propval *pval)
+{
+	if (psp == POWER_SUPPLY_PROP_TYPE)
+		pval->intval = POWER_SUPPLY_TYPE_MAINS;
+
+	return 0;
+}
+
 static enum power_supply_property fg_psy_props[] = {
-	POWER_SUPPLY_PROP_CAPACITY,
-	POWER_SUPPLY_PROP_REAL_CAPACITY,
-	POWER_SUPPLY_PROP_CAPACITY_RAW,
-	POWER_SUPPLY_PROP_TEMP,
-	POWER_SUPPLY_PROP_COLD_TEMP,
-	POWER_SUPPLY_PROP_COOL_TEMP,
-	POWER_SUPPLY_PROP_WARM_TEMP,
-	POWER_SUPPLY_PROP_HOT_TEMP,
-	POWER_SUPPLY_PROP_VOLTAGE_NOW,
-	POWER_SUPPLY_PROP_VOLTAGE_OCV,
-	POWER_SUPPLY_PROP_CURRENT_NOW,
-	POWER_SUPPLY_PROP_RESISTANCE_ID,
-	POWER_SUPPLY_PROP_RESISTANCE,
-	POWER_SUPPLY_PROP_BATTERY_TYPE,
-	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
-	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
-	POWER_SUPPLY_PROP_CYCLE_COUNT,
-	POWER_SUPPLY_PROP_CYCLE_COUNTS,
-	POWER_SUPPLY_PROP_CHARGE_NOW_RAW,
-	POWER_SUPPLY_PROP_CHARGE_NOW,
-	POWER_SUPPLY_PROP_CHARGE_FULL,
-	POWER_SUPPLY_PROP_CHARGE_COUNTER,
-	POWER_SUPPLY_PROP_CHARGE_COUNTER_SHADOW,
-	POWER_SUPPLY_PROP_TIME_TO_FULL_AVG,
-	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
-	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
-	POWER_SUPPLY_PROP_SOC_REPORTING_READY,
-	POWER_SUPPLY_PROP_DEBUG_BATTERY,
-	POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE,
-	POWER_SUPPLY_PROP_CC_STEP,
-	POWER_SUPPLY_PROP_CC_STEP_SEL,
-	POWER_SUPPLY_PROP_FG_RESET_CLOCK,
+	POWER_SUPPLY_PROP_TYPE,
 };
 
 static const struct power_supply_desc fg_psy_desc = {
 	.name = "bms",
-	.type = POWER_SUPPLY_TYPE_BMS,
+	.type = POWER_SUPPLY_TYPE_MAINS,
 	.properties = fg_psy_props,
 	.num_properties = ARRAY_SIZE(fg_psy_props),
 	.get_property = fg_psy_get_property,
-	.set_property = fg_psy_set_property,
-	.external_power_changed = fg_external_power_changed,
-	.property_is_writeable = fg_property_is_writeable,
 };
+
+static int fg_init_psy(struct fg_dev *fg)
+{
+	struct power_supply_config fg_psy_cfg = {};
+	struct fg_gen3_chip *chip = NULL;
+	int rc;
+
+	fg_psy_cfg.drv_data = chip;
+	fg->fg_psy = devm_power_supply_register(fg->dev,
+				&fg_psy_desc, &fg_psy_cfg);
+	if (IS_ERR_OR_NULL(fg->fg_psy)) {
+		pr_err("Failed to register fg_psy, rc = %d\n",
+				PTR_ERR(fg->fg_psy));
+		return -ENODEV;
+	}
+
+	fg->nb.notifier_call = fg_notifier_cb;
+	rc = power_supply_reg_notifier(&fg->nb);
+	if (rc < 0)
+		pr_err("Failed to register psy notifier rc = %d\n", rc);
+
+	return rc;
+}
+
+static int fg_init_iio_psy(struct fg_dev *fg,
+				struct platform_device *pdev)
+{
+	struct iio_dev *indio_dev = fg->indio_dev;
+	struct iio_chan_spec *chan;
+	int fg_num_iio_channels = ARRAY_SIZE(fg_iio_psy_channels);
+	int rc, i;
+
+	fg->iio_chan = devm_kcalloc(fg->dev, fg_num_iio_channels,
+				sizeof(*fg->iio_chan), GFP_KERNEL);
+	if (!fg->iio_chan)
+		return -ENOMEM;
+
+	fg->int_iio_chans = devm_kcalloc(fg->dev,
+				fg_num_iio_channels,
+				sizeof(*fg->int_iio_chans),
+				GFP_KERNEL);
+	if (!fg->int_iio_chans)
+		return -ENOMEM;
+
+	fg->ext_iio_chans = devm_kcalloc(fg->dev,
+				ARRAY_SIZE(fg_ext_iio_chan_name),
+				sizeof(*fg->ext_iio_chans),
+				GFP_KERNEL);
+	if (!fg->ext_iio_chans)
+		return -ENOMEM;
+
+	indio_dev->info = &fg_iio_info;
+	indio_dev->dev.parent = fg->dev;
+	indio_dev->dev.of_node = fg->dev->of_node;
+	indio_dev->name = "qpnp,fg";
+	indio_dev->modes = INDIO_DIRECT_MODE;
+	indio_dev->channels = fg->iio_chan;
+	indio_dev->num_channels = fg_num_iio_channels;
+
+	for (i = 0; i < fg_num_iio_channels; i++) {
+		fg->int_iio_chans[i].indio_dev = indio_dev;
+		chan = &fg->iio_chan[i];
+		fg->int_iio_chans[i].channel = chan;
+		chan->address = i;
+		chan->channel = fg_iio_psy_channels[i].channel_num;
+		chan->type = fg_iio_psy_channels[i].type;
+		chan->datasheet_name =
+			fg_iio_psy_channels[i].datasheet_name;
+		chan->extend_name =
+			fg_iio_psy_channels[i].datasheet_name;
+		chan->info_mask_separate =
+			fg_iio_psy_channels[i].info_mask;
+	}
+
+	rc = devm_iio_device_register(fg->dev, indio_dev);
+	if (rc)
+		pr_err("Failed to register FG IIO device, rc=%d\n", rc);
+
+	return rc;
+}
 
 /* INIT FUNCTIONS STAY HERE */
 
@@ -5389,14 +5314,18 @@ static void fg_cleanup(struct fg_gen3_chip *chip)
 
 static int fg_gen3_probe(struct platform_device *pdev)
 {
-	struct fg_gen3_chip *chip;
+	struct fg_gen3_chip *chip = NULL;
 	struct fg_dev *fg;
 	struct power_supply_config fg_psy_cfg;
 	int rc, msoc, volt_uv, batt_temp;
+	struct iio_dev *indio_dev;
 
-	chip = devm_kzalloc(&pdev->dev, sizeof(*chip), GFP_KERNEL);
-	if (!chip)
+	indio_dev = devm_iio_device_alloc(&pdev->dev, sizeof(*chip));
+	if (!indio_dev)
 		return -ENOMEM;
+
+	fg = iio_priv(indio_dev);
+	fg->indio_dev = indio_dev;
 
 	fg = &chip->fg;
 	fg->dev = &pdev->dev;
@@ -5534,23 +5463,19 @@ static int fg_gen3_probe(struct platform_device *pdev)
 	}
 
 	/* Register the power supply */
-	fg_psy_cfg.drv_data = chip;
-	fg_psy_cfg.of_node = NULL;
 	fg_psy_cfg.supplied_to = NULL;
 	fg_psy_cfg.num_supplicants = 0;
-	fg->fg_psy = devm_power_supply_register(fg->dev, &fg_psy_desc,
-			&fg_psy_cfg);
-	if (IS_ERR(fg->fg_psy)) {
-		pr_err("failed to register fg_psy rc = %ld\n",
-				PTR_ERR(fg->fg_psy));
-		goto exit;
+
+	rc = fg_init_iio_psy(fg, pdev);
+	if (rc < 0) {
+		pr_err("Failed to initialize QG IIO PSY, rc=%d\n", rc);
+		goto fail_votable;
 	}
 
-	fg->nb.notifier_call = fg_notifier_cb;
-	rc = power_supply_reg_notifier(&fg->nb);
+	rc = fg_init_psy(fg);
 	if (rc < 0) {
-		pr_err("Couldn't register psy notifier rc = %d\n", rc);
-		goto exit;
+		pr_err("Failed to initialize QG PSY, rc=%d\n", rc);
+		goto fail_votable;
 	}
 
 	fg->twm_nb.notifier_call = twm_notifier_cb;
@@ -5603,6 +5528,8 @@ static int fg_gen3_probe(struct platform_device *pdev)
 
 	pr_debug("FG GEN3 driver probed successfully\n");
 	return 0;
+fail_votable:
+	destroy_votable(fg->awake_votable);
 exit:
 	fg_cleanup(chip);
 	return rc;
@@ -5718,7 +5645,7 @@ static const struct of_device_id fg_gen3_match_table[] = {
 
 static struct platform_driver fg_gen3_driver = {
 	.driver = {
-		.name = FG_GEN3_DEV_NAME,
+		.name = "FG_GEN3_DEV_NAME",
 		.of_match_table = fg_gen3_match_table,
 		.pm		= &fg_gen3_pm_ops,
 	},
@@ -5742,4 +5669,3 @@ module_exit(fg_gen3_exit);
 
 MODULE_DESCRIPTION("QPNP Fuel gauge GEN3 driver");
 MODULE_LICENSE("GPL v2");
-MODULE_ALIAS("platform:" FG_GEN3_DEV_NAME);
