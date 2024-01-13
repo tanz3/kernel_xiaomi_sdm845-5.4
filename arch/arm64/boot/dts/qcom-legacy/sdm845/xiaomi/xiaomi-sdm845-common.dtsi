@@ -323,19 +323,19 @@
 &pm8998_vadc {
 	vph_pwr {
 		label = "vph_pwr";
-		reg = <ADC_VPH_PWR>;
+		reg = <ADC5_VPH_PWR>;
 		qcom,pre-scaling = <1 1>;
 	};
 
 	vcoin {
 		label = "vcoin";
-		reg = <ADC_VCOIN>;
+		reg = <ADC5_VCOIN>;
 		qcom,pre-scaling = <1 1>;
 	};
 
 	xo_therm {
 		label = "xo_therm";
-		reg = <ADC_XO_THERM_PU2>;
+		reg = <ADC5_XO_THERM_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -343,7 +343,7 @@
 
 	cam_therm0 {
 		label = "cam_therm0";
-		reg = <ADC_AMUX_THM1_PU2>;
+		reg = <ADC5_AMUX_THM1_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -351,7 +351,7 @@
 
 	pa_therm0 {
 		label = "pa_therm0";
-		reg = <ADC_AMUX_THM3_PU2>;
+		reg = <ADC5_AMUX_THM3_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -359,7 +359,7 @@
 
 	pa_therm1 {
 		label = "pa_therm1";
-		reg = <ADC_AMUX_THM4_PU2>;
+		reg = <ADC5_AMUX_THM4_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -367,7 +367,7 @@
 
 	quiet_therm {
 		label = "quiet_therm";
-		reg = <ADC_AMUX_THM5_PU2>;
+		reg = <ADC5_AMUX_THM5_100K_PU>;
 		qcom,ratiometric;
 		qcom,hw-settle-time = <200>;
 		qcom,pre-scaling = <1 1>;
@@ -377,14 +377,14 @@
 &pm8998_adc_tm {
 	vph_pwr {
 		label = "vph_pwr";
-		reg = <ADC_VPH_PWR>;
+		reg = <ADC5_VPH_PWR>;
 		qcom,pre-scaling = <1 1>;
 		qcom,btm-channel-number = <0x60>;
 	};
 
 	xo_therm {
 		label = "xo_therm";
-		reg = <ADC_XO_THERM_PU2>;
+		reg = <ADC5_XO_THERM_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -394,7 +394,7 @@
 
 	cam_therm0 {
 		label = "cam_therm0";
-		reg = <ADC_AMUX_THM1_PU2>;
+		reg = <ADC5_AMUX_THM1_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -404,7 +404,7 @@
 
 	pa_therm0 {
 		label = "pa_therm0";
-		reg = <ADC_AMUX_THM3_PU2>;
+		reg = <ADC5_AMUX_THM3_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -414,7 +414,7 @@
 
 	pa_therm1 {
 		label = "pa_therm1";
-		reg = <ADC_AMUX_THM4_PU2>;
+		reg = <ADC5_AMUX_THM4_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -424,7 +424,7 @@
 
 	quiet_therm {
 		label = "quiet_therm";
-		reg = <ADC_AMUX_THM5_PU2>;
+		reg = <ADC5_AMUX_THM5_100K_PU>;
 		qcom,ratiometric;
 		qcom,pre-scaling = <1 1>;
 		qcom,hw-settle-time = <200>;
@@ -437,7 +437,7 @@
 	xo_therm {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_XO_THERM_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_XO_THERM_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
@@ -452,7 +452,7 @@
 	cam_therm0 {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_AMUX_THM1_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_AMUX_THM1_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
@@ -467,7 +467,7 @@
 	pa_therm0 {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_AMUX_THM3_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_AMUX_THM3_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
@@ -482,7 +482,7 @@
 	pa_therm1 {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_AMUX_THM4_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_AMUX_THM4_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
@@ -497,7 +497,7 @@
 	quiet_therm {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
-		thermal-sensors = <&pm8998_adc_tm ADC_AMUX_THM5_PU2>;
+		thermal-sensors = <&pm8998_adc_tm ADC5_AMUX_THM5_100K_PU>;
 		thermal-governor = "user_space";
 
 		trips {
