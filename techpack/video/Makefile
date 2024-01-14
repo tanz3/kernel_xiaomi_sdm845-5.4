@@ -35,6 +35,11 @@ ifeq ($(CONFIG_ARCH_SCUBA), y)
 LINUXINCLUDE    += -include $(srctree)/techpack/video/config/scubavidconf.h
 endif
 
+ifeq ($(CONFIG_ARCH_SDM845), y)
+include $(srctree)/techpack/video/config/konavid.conf
+LINUXINCLUDE    += -include $(srctree)/techpack/video/config/konavidconf.h
+endif
+
 LINUXINCLUDE    += -I$(srctree)/techpack/video/include \
                    -I$(srctree)/techpack/video/include/uapi
 
